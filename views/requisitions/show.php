@@ -153,6 +153,46 @@ $attachments = $requisition['attachments'] ?? [];
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Coluna Esquerda: Itens, Justificativa, Fotos e Auditoria (2 cols) -->
             <div class="lg:col-span-2 space-y-6">
+                <?php if ($requisition['type'] === 'servico' && !empty($requisition['is_equipment_repair'])): ?>
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                                <i class="fas fa-wrench"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold uppercase tracking-wider text-amber-800">
+                                    Ordem de Serviço &bull; <?= ($requisition['maintenance_type'] ?? 'reparo') === 'preventiva' ? 'Manutenção Preventiva' : 'Reparo / Manutenção de Equipamento ou Móvel' ?>
+                                </div>
+                                <?php if (!empty($requisition['linked_product_id'])): ?>
+                                    <div class="text-sm font-bold text-slate-900 mt-0.5">
+                                        Produto Vinculado:
+                                        <a href="<?= url('produtos/ver?id=' . (int)$requisition['linked_product_id']) ?>" class="text-indigo-700 hover:underline">
+                                            <?= htmlspecialchars($requisition['linked_product_name'] ?? ('Produto #' . $requisition['linked_product_id'])) ?>
+                                        </a>
+                                        <?php if (!empty($requisition['linked_product_serial'])): ?>
+                                            <span class="ml-1.5 text-xs font-mono bg-white border border-amber-200 px-2 py-0.5 rounded text-slate-700">
+                                                N/S: <?= htmlspecialchars($requisition['linked_product_serial']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="text-xs text-slate-600 mt-0.5">Reparo geral sem produto específico selecionado no catálogo.</div>
+                                <?php endif; ?>
+                                <?php if (!empty($requisition['completed_at'])): ?>
+                                    <div class="text-xs text-emerald-700 font-semibold mt-1">
+                                        <i class="fas fa-check-circle mr-1"></i> Manutenção concluída em <?= formatDateTime($requisition['completed_at']) ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php if (!empty($requisition['linked_product_id'])): ?>
+                            <a href="<?= url('produtos/ver?id=' . (int)$requisition['linked_product_id']) ?>" class="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-xs font-bold text-amber-900 hover:bg-amber-100 transition shrink-0">
+                                <i class="fas fa-box mr-1"></i> Ficha do Produto
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Tabela de Itens Requisitados -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                     <div class="p-5 border-b border-slate-100 flex justify-between items-center">

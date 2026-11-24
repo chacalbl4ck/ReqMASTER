@@ -11,6 +11,8 @@ use App\Models\CostCenter;
 use App\Models\ActivityLog;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\Product;
+use App\Models\ServiceCatalog;
 use App\Services\MailService;
 use App\Services\CertificateSignService;
 
@@ -71,6 +73,13 @@ class RequisitionController
 
         $companySettings = $this->settingModel->getAll();
         $costCenters = (new CostCenter())->all(true);
+        $products = (new Product())->all(true);
+        $services = (new ServiceCatalog())->all(true);
+        $preselectedRepair = !empty($_GET['repair']);
+        $preselectedProductId = (int)($_GET['product_id'] ?? 0);
+        $preselectedMaintenanceType = in_array($_GET['maintenance_type'] ?? '', ['reparo', 'preventiva'], true)
+            ? $_GET['maintenance_type']
+            : 'reparo';
 
         require __DIR__ . '/../../views/requisitions/create.php';
     }
@@ -199,11 +208,20 @@ class RequisitionController
             }
         }
 
+        $isRepair = ($type === 'servico' && !empty($_POST['is_equipment_repair'])) ? 1 : 0;
+        $linkedProductId = ($isRepair && !empty($_POST['linked_product_id'])) ? (int)$_POST['linked_product_id'] : null;
+        $maintenanceType = ($isRepair && in_array($_POST['maintenance_type'] ?? '', ['reparo', 'preventiva'], true))
+            ? $_POST['maintenance_type']
+            : ($isRepair ? 'reparo' : null);
+
         $data = [
             'user_id'             => $user['id'],
             'supplier_id'         => $supplierId,
             'contract_id'         => $contractId,
             'type'                => $type,
+            'is_equipment_repair' => $isRepair,
+            'linked_product_id'   => $linkedProductId,
+            'maintenance_type'    => $maintenanceType,
             'title'               => $title,
             'department'          => $department,
             'priority'            => $priority,
@@ -564,6 +582,8 @@ class RequisitionController
             : [];
         $companySettings = $this->settingModel->getAll();
         $costCenters = (new CostCenter())->all(true);
+        $products = (new Product())->all(true);
+        $services = (new ServiceCatalog())->all(true);
 
         require __DIR__ . '/../../views/requisitions/edit.php';
     }
@@ -632,16 +652,25 @@ class RequisitionController
 
         $currentUser = Security::getUser();
 
+        $isRepair = ($type === 'servico' && !empty($_POST['is_equipment_repair'])) ? 1 : 0;
+        $linkedProductId = ($isRepair && !empty($_POST['linked_product_id'])) ? (int)$_POST['linked_product_id'] : null;
+        $maintenanceType = ($isRepair && in_array($_POST['maintenance_type'] ?? '', ['reparo', 'preventiva'], true))
+            ? $_POST['maintenance_type']
+            : ($isRepair ? 'reparo' : null);
+
         try {
             $data = [
-                'title'         => $title,
-                'supplier_id'   => $supplierId,
-                'contract_id'   => $contractId,
-                'type'          => $type,
-                'department'    => $department,
-                'priority'      => $priority,
-                'justification' => $justification,
-                'deadline'      => $deadline
+                'title'               => $title,
+                'supplier_id'         => $supplierId,
+                'contract_id'         => $contractId,
+                'type'                => $type,
+                'is_equipment_repair' => $isRepair,
+                'linked_product_id'   => $linkedProductId,
+                'maintenance_type'    => $maintenanceType,
+                'department'          => $department,
+                'priority'            => $priority,
+                'justification'       => $justification,
+                'deadline'            => $deadline
             ];
 
             $this->reqModel->updateByAdmin($id, $data, $items, (int)$currentUser['id'], $currentUser['name']);

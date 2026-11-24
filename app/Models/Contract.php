@@ -176,4 +176,17 @@ class Contract extends Model
         $stmt->execute(['days' => $days]);
         return $stmt->fetchAll();
     }
+
+    public function delete(int $id): bool
+    {
+        $contract = $this->findById($id);
+        if ($contract && !empty($contract['file_path'])) {
+            $abs = __DIR__ . '/../../public/' . ltrim((string)$contract['file_path'], '/');
+            if (file_exists($abs)) {
+                @unlink($abs);
+            }
+        }
+        $stmt = $this->db->prepare("DELETE FROM contracts WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
+    }
 }

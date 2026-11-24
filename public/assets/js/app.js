@@ -110,8 +110,9 @@ document.addEventListener('DOMContentLoaded', function () {
         tr.className = 'border-b border-slate-100 hover:bg-slate-50 transition';
         tr.innerHTML = `
             <td class="py-3 px-3">
-                <input type="text" name="item_description[]" required class="w-full text-sm rounded-lg border-slate-300 focus:border-primary-500 focus:ring-primary-500" placeholder="Descrição do material ou escopo do serviço">
-                <input type="text" name="item_specs[]" class="w-full text-xs text-slate-500 rounded border-slate-200 mt-1 focus:border-primary-500 focus:ring-primary-500" placeholder="Especificações técnicas, marca de referência, etc (opcional)">
+                <select class="item-catalog-select hidden w-full text-xs rounded-lg border-indigo-200 bg-indigo-50/40 text-slate-700 mb-1.5 focus:border-primary-500 focus:ring-primary-500"></select>
+                <input type="text" name="item_description[]" required class="item-desc-input w-full text-sm rounded-lg border-slate-300 focus:border-primary-500 focus:ring-primary-500" placeholder="Descrição do material ou escopo do serviço">
+                <input type="text" name="item_specs[]" class="item-specs-input w-full text-xs text-slate-500 rounded border-slate-200 mt-1 focus:border-primary-500 focus:ring-primary-500" placeholder="Especificações técnicas, marca de referência, etc (opcional)">
             </td>
             <td class="py-3 px-3 w-28">
                 <select name="item_unit[]" class="w-full text-sm rounded-lg border-slate-300 focus:border-primary-500 focus:ring-primary-500">
@@ -147,6 +148,10 @@ document.addEventListener('DOMContentLoaded', function () {
             </td>
         `;
         itemsTableBody.appendChild(tr);
+        if (typeof window.populateCatalogSelect === 'function') {
+            const sel = tr.querySelector('.item-catalog-select');
+            if (sel) window.populateCatalogSelect(sel);
+        }
     }
 
     function parseMoneyInput(val) {

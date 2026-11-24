@@ -124,12 +124,16 @@ class Requisition extends Model
                    c.total_value as contract_total_value,
                    c.used_value as contract_used_value,
                    (c.total_value - c.used_value) as contract_balance,
-                   app.name as approver_name
+                   app.name as approver_name,
+                   p.name as linked_product_name,
+                   p.serial_number as linked_product_serial,
+                   p.last_maintenance_at as linked_product_last_maintenance
             FROM requisitions r
             JOIN users u ON u.id = r.user_id
             JOIN suppliers s ON s.id = r.supplier_id
             LEFT JOIN contracts c ON c.id = r.contract_id
             LEFT JOIN users app ON app.id = r.approved_by
+            LEFT JOIN products p ON p.id = r.linked_product_id
             WHERE r.id = :id
             LIMIT 1
         ");
@@ -215,34 +219,44 @@ class Requisition extends Model
 
             $stmt = $this->db->prepare("
                 INSERT INTO requisitions (
-                    code, view_token, user_id, supplier_id, contract_id, type, title,
-                    department, priority, justification, deadline, total_amount, has_values,
+                    code, view_token, user_id, supplier_id, contract_id, type,
+                    is_equipment_repair, linked_product_id, maintenance_type,
+                    title, department, priority, justification, deadline, total_amount, has_values,
                     requester_signature, status
                 ) VALUES (
-                    :code, :view_token, :user_id, :supplier_id, :contract_id, :type, :title,
-                    :department, :priority, :justification, :deadline, :total_amount, :has_values,
+                    :code, :view_token, :user_id, :supplier_id, :contract_id, :type,
+                    :is_equipment_repair, :linked_product_id, :maintenance_type,
+                    :title, :department, :priority, :justification, :deadline, :total_amount, :has_values,
                     :requester_sig, :status
                 )
             ");
 
             $contractId = !empty($data['contract_id']) ? (int)$data['contract_id'] : null;
+            $isRepair = ($data['type'] === 'servico' && !empty($data['is_equipment_repair'])) ? 1 : 0;
+            $linkedProductId = ($isRepair && !empty($data['linked_product_id'])) ? (int)$data['linked_product_id'] : null;
+            $maintenanceType = ($isRepair && !empty($data['maintenance_type']) && in_array($data['maintenance_type'], ['reparo', 'preventiva'], true))
+                ? $data['maintenance_type']
+                : ($isRepair ? 'reparo' : null);
 
             $stmt->execute([
-                'code'          => $code,
-                'view_token'    => $viewToken,
-                'user_id'       => (int)$data['user_id'],
-                'supplier_id'   => (int)$data['supplier_id'],
-                'contract_id'   => $contractId,
-                'type'          => $data['type'], // 'material' ou 'servico'
-                'title'         => $data['title'],
-                'department'    => $data['department'],
-                'priority'      => $data['priority'] ?? 'media',
-                'justification' => $data['justification'],
-                'deadline'      => !empty($data['deadline']) ? $data['deadline'] : null,
-                'total_amount'  => $totalAmount,
-                'has_values'    => $hasValues,
-                'requester_sig' => $data['requester_signature'] ?? null,
-                'status'        => $data['status'] ?? 'pendente'
+                'code'                => $code,
+                'view_token'          => $viewToken,
+                'user_id'             => (int)$data['user_id'],
+                'supplier_id'         => (int)$data['supplier_id'],
+                'contract_id'         => $contractId,
+                'type'                => $data['type'], // 'material' ou 'servico'
+                'is_equipment_repair' => $isRepair,
+                'linked_product_id'   => $linkedProductId,
+                'maintenance_type'    => $maintenanceType,
+                'title'               => $data['title'],
+                'department'          => $data['department'],
+                'priority'            => $data['priority'] ?? 'media',
+                'justification'       => $data['justification'],
+                'deadline'            => !empty($data['deadline']) ? $data['deadline'] : null,
+                'total_amount'        => $totalAmount,
+                'has_values'          => $hasValues,
+                'requester_sig'       => $data['requester_signature'] ?? null,
+                'status'              => $data['status'] ?? 'pendente'
             ]);
 
             $requisitionId = (int)$this->db->lastInsertId();
@@ -341,6 +355,8 @@ class Requisition extends Model
                 $sql .= ", rejection_reason = :reason, approved_by = :approved_by, approved_at = NOW()";
                 $params['reason'] = $reason ?? 'Não informado';
                 $params['approved_by'] = $userId;
+            } elseif ($newStatus === 'concluida') {
+                $sql .= ", completed_at = NOW()";
             }
 
             $sql .= " WHERE id = :id";
@@ -365,6 +381,22 @@ class Requisition extends Model
             };
             $desc = "Status alterado de '{$req['status']}' para '{$newStatus}'." . ($reason ? " Motivo: {$reason}" : "");
             $log->log($actionName, $desc, $id, !empty($req['contract_id']) ? (int)$req['contract_id'] : null, $userId);
+
+            // Registra data da última manutenção/reparo no produto vinculado quando OS for concluída
+            if ($newStatus === 'concluida' && $req['type'] === 'servico' && !empty($req['linked_product_id'])) {
+                $productModel = new Product();
+                $completionDate = date('Y-m-d');
+                $productModel->recordMaintenanceCompletion((int)$req['linked_product_id'], $completionDate);
+                $prodLabel = $req['linked_product_name'] ?? ('ID ' . (int)$req['linked_product_id']);
+                $maintKind = ($req['maintenance_type'] ?? 'reparo') === 'preventiva' ? 'Manutenção Preventiva' : 'Reparo / Manutenção';
+                $log->log(
+                    'Manutenção Concluída',
+                    "{$maintKind} concluída para o produto '{$prodLabel}' em " . date('d/m/Y') . ".",
+                    $id,
+                    !empty($req['contract_id']) ? (int)$req['contract_id'] : null,
+                    $userId
+                );
+            }
 
             // Registra Assinatura Digital do Aprovador na Trilha de Auditoria
             if ($newStatus === 'aprovada' && !empty($approverSignature)) {
@@ -429,33 +461,45 @@ class Requisition extends Model
 
             // Atualiza a tabela requisitions
             $contractId = !empty($data['contract_id']) ? (int)$data['contract_id'] : null;
+            $isRepair = ($data['type'] === 'servico' && !empty($data['is_equipment_repair'])) ? 1 : 0;
+            $linkedProductId = ($isRepair && !empty($data['linked_product_id'])) ? (int)$data['linked_product_id'] : null;
+            $maintenanceType = ($isRepair && !empty($data['maintenance_type']) && in_array($data['maintenance_type'], ['reparo', 'preventiva'], true))
+                ? $data['maintenance_type']
+                : ($isRepair ? 'reparo' : null);
+
             $stmt = $this->db->prepare("
                 UPDATE requisitions SET
-                    supplier_id   = :supplier_id,
-                    contract_id   = :contract_id,
-                    type          = :type,
-                    title         = :title,
-                    department    = :department,
-                    priority      = :priority,
-                    justification = :justification,
-                    deadline      = :deadline,
-                    total_amount  = :total_amount,
-                    has_values    = :has_values
+                    supplier_id         = :supplier_id,
+                    contract_id         = :contract_id,
+                    type                = :type,
+                    is_equipment_repair = :is_equipment_repair,
+                    linked_product_id   = :linked_product_id,
+                    maintenance_type    = :maintenance_type,
+                    title               = :title,
+                    department          = :department,
+                    priority            = :priority,
+                    justification       = :justification,
+                    deadline            = :deadline,
+                    total_amount        = :total_amount,
+                    has_values          = :has_values
                 WHERE id = :id
             ");
 
             $stmt->execute([
-                'id'            => $id,
-                'supplier_id'   => (int)$data['supplier_id'],
-                'contract_id'   => $contractId,
-                'type'          => $data['type'],
-                'title'         => $data['title'],
-                'department'    => $data['department'],
-                'priority'      => $data['priority'] ?? 'media',
-                'justification' => $data['justification'],
-                'deadline'      => !empty($data['deadline']) ? $data['deadline'] : null,
-                'total_amount'  => $totalAmount,
-                'has_values'    => $hasValues
+                'id'                  => $id,
+                'supplier_id'         => (int)$data['supplier_id'],
+                'contract_id'         => $contractId,
+                'type'                => $data['type'],
+                'is_equipment_repair' => $isRepair,
+                'linked_product_id'   => $linkedProductId,
+                'maintenance_type'    => $maintenanceType,
+                'title'               => $data['title'],
+                'department'          => $data['department'],
+                'priority'            => $data['priority'] ?? 'media',
+                'justification'       => $data['justification'],
+                'deadline'            => !empty($data['deadline']) ? $data['deadline'] : null,
+                'total_amount'        => $totalAmount,
+                'has_values'          => $hasValues
             ]);
 
             // Atualiza itens: remove antigos e insere novos

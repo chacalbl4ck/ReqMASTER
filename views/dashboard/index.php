@@ -22,6 +22,69 @@ $counts = $metrics['counts'];
         </div>
     </div>
 
+    <?php if (!empty($overdueProducts)): ?>
+        <!-- Aviso de Manutenção Preventiva Atrasada -->
+        <div class="bg-rose-50 border border-rose-200 rounded-2xl p-5 shadow-sm space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                        <i class="fas fa-triangle-exclamation text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold text-rose-950">
+                            Alerta de Manutenção Preventiva Atrasada (<?= count($overdueProducts) ?> <?= count($overdueProducts) === 1 ? 'equipamento' : 'equipamentos' ?>)
+                        </h2>
+                        <p class="text-xs text-rose-800">
+                            Há equipamentos ou móveis cujo prazo desde a última manutenção ultrapassou o intervalo preventivo cadastrado.
+                        </p>
+                    </div>
+                </div>
+                <a href="<?= url('produtos') ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-rose-200 text-rose-700 hover:bg-rose-100 text-xs font-bold transition shrink-0">
+                    <i class="fas fa-boxes"></i> Ver Catálogo de Produtos
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                <?php foreach ($overdueProducts as $op): ?>
+                    <?php
+                        $daysSince = (int)($op['days_elapsed'] ?? 0);
+                        $interval = (int)($op['maintenance_interval_days'] ?? 0);
+                        $daysLate = (int)($op['days_overdue'] ?? max(1, $daysSince - $interval));
+                    ?>
+                    <div class="bg-white rounded-xl border border-rose-200/80 p-3.5 flex flex-col justify-between gap-2.5 shadow-sm">
+                        <div>
+                            <div class="flex items-start justify-between gap-2">
+                                <a href="<?= url('produtos/ver?id=' . (int)$op['id']) ?>" class="font-bold text-sm text-slate-900 hover:text-indigo-700 transition">
+                                    <?= htmlspecialchars($op['name']) ?>
+                                </a>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 shrink-0">
+                                    +<?= $daysLate ?>d atraso
+                                </span>
+                            </div>
+                            <?php if (!empty($op['serial_number'])): ?>
+                                <div class="text-[11px] font-mono text-slate-500 mt-0.5">N/S: <?= htmlspecialchars($op['serial_number']) ?></div>
+                            <?php endif; ?>
+                            <div class="text-xs text-slate-600 mt-1.5">
+                                Última: <strong><?= formatDate($op['last_maintenance_at']) ?></strong>
+                                &bull; Prazo: <strong><?= $interval ?> dias</strong>
+                                (decorridos <?= $daysSince ?>d)
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                            <a href="<?= url('produtos/ver?id=' . (int)$op['id']) ?>" class="text-[11px] font-semibold text-slate-600 hover:text-slate-900">
+                                Ver Ficha
+                            </a>
+                            <a href="<?= url('requisicoes/nova?type=servico&repair=1&maintenance_type=preventiva&product_id=' . (int)$op['id']) ?>"
+                               class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition">
+                                <i class="fas fa-wrench"></i> Abrir OS Preventiva
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- Cards de Métricas Principais -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Pendentes -->

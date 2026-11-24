@@ -125,6 +125,15 @@ require __DIR__ . '/../layout/header.php';
                             <a href="<?= url('requisicoes/nova?supplier_id=' . $c['supplier_id'] . '&contract_id=' . $c['id']) ?>" class="p-1.5 text-indigo-600 hover:text-indigo-800 font-medium" title="Criar Requisição Vinculada">
                                 <i class="fas fa-plus-circle text-base"></i>
                             </a>
+                            <?php if (\App\Helpers\Security::hasRole(['admin'])): ?>
+                                <form method="POST" action="<?= url('contratos/excluir') ?>" class="inline" onsubmit="return confirm('Confirma excluir o contrato <?= htmlspecialchars($c['contract_number']) ?>?');">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="id" value="<?= $c['id'] ?>">
+                                    <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Excluir Contrato">
+                                        <i class="fas fa-trash-alt text-sm"></i>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                             <a href="<?= url('contratos/ver?id=' . $c['id']) ?>" class="p-1.5 text-slate-400 hover:text-slate-700" title="Ver Detalhes">
                                 <i class="fas fa-arrow-right text-base"></i>
                             </a>

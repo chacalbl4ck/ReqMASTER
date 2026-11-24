@@ -82,6 +82,53 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
                 </label>
             </div>
 
+            <!-- Opção exclusiva de Prestação de Serviços: Reparo/Manutenção de Equipamento ou Móvel -->
+            <div id="serviceRepairSection" class="<?= $reqType === 'servico' ? '' : 'hidden' ?> rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-4">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_equipment_repair" id="is_equipment_repair" value="1"
+                           <?= !empty($preselectedRepair) ? 'checked' : '' ?>
+                           class="mt-0.5 rounded border-amber-400 text-indigo-600 focus:ring-indigo-500">
+                    <div>
+                        <span class="block text-sm font-bold text-slate-900">
+                            <i class="fas fa-wrench text-amber-600 mr-1"></i> É uma solicitação de reparo de equipamento ou móvel?
+                        </span>
+                        <span class="block text-xs text-slate-600 mt-0.5">
+                            Ao marcar esta opção, é liberada abaixo a seleção para vincular um produto/equipamento previamente cadastrado nesta requisição, permitindo registrar o histórico de reparo ou manutenção preventiva ao concluir a ordem de serviço.
+                        </span>
+                    </div>
+                </label>
+
+                <div id="repairProductPicker" class="<?= !empty($preselectedRepair) ? '' : 'hidden' ?> grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-amber-200/80">
+                    <div class="md:col-span-2">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                                Produto / Equipamento Vinculado ao Serviço
+                            </label>
+                            <a href="<?= url('produtos') ?>" target="_blank" class="text-[11px] font-bold text-indigo-600 hover:underline">
+                                <i class="fas fa-external-link-alt mr-0.5"></i> Gerenciar Produtos
+                            </a>
+                        </div>
+                        <select name="linked_product_id" id="linked_product_id" class="w-full text-sm rounded-xl border-amber-300 bg-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            <option value="">-- Selecione um produto cadastrado (opcional) --</option>
+                            <?php foreach ($products ?? [] as $prod): ?>
+                                <option value="<?= (int)$prod['id'] ?>" <?= ((int)($preselectedProductId ?? 0) === (int)$prod['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($prod['name']) ?><?= !empty($prod['serial_number']) ? ' • N/S: ' . htmlspecialchars($prod['serial_number']) : '' ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                            Tipo de Manutenção
+                        </label>
+                        <select name="maintenance_type" id="maintenance_type" class="w-full text-sm rounded-xl border-amber-300 bg-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            <option value="reparo" <?= ($preselectedMaintenanceType ?? 'reparo') === 'reparo' ? 'selected' : '' ?>>Reparo / Manutenção Corretiva</option>
+                            <option value="preventiva" <?= ($preselectedMaintenanceType ?? '') === 'preventiva' ? 'selected' : '' ?>>Manutenção Preventiva</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <!-- Dados Básicos -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="md:col-span-2">
@@ -218,8 +265,9 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
                         <!-- Linha 1 padrão -->
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
                             <td class="py-3 px-3">
-                                <input type="text" name="item_description[]" required class="w-full text-sm rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Descrição do material ou escopo do serviço">
-                                <input type="text" name="item_specs[]" class="w-full text-xs text-slate-500 rounded border-slate-200 mt-1 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Especificações técnicas, marca de referência, etc (opcional)">
+                                <select class="item-catalog-select hidden w-full text-xs rounded-lg border-indigo-200 bg-indigo-50/40 text-slate-700 mb-1.5 focus:border-indigo-500 focus:ring-indigo-500"></select>
+                                <input type="text" name="item_description[]" required class="item-desc-input w-full text-sm rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Descrição do material ou escopo do serviço">
+                                <input type="text" name="item_specs[]" class="item-specs-input w-full text-xs text-slate-500 rounded border-slate-200 mt-1 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Especificações técnicas, marca de referência, etc (opcional)">
                             </td>
                             <td class="py-3 px-3 w-28">
                                 <select name="item_unit[]" class="w-full text-sm rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
@@ -597,6 +645,117 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
             alert('Erro de comunicação ao cadastrar centro de custo.');
         });
     }
+
+    // --------------------------------------------------------
+    // CATÁLOGO DE PRODUTOS / SERVIÇOS E VÍNCULO DE REPARO
+    // --------------------------------------------------------
+    window.REQ_CATALOG = {
+        products: <?= json_encode(array_map(fn($p) => [
+            'id' => (int)$p['id'],
+            'name' => $p['name'],
+            'serial' => $p['serial_number'] ?? '',
+            'notes' => $p['notes'] ?? ''
+        ], $products ?? []), JSON_UNESCAPED_UNICODE) ?>,
+        services: <?= json_encode(array_map(fn($s) => [
+            'id' => (int)$s['id'],
+            'name' => $s['name'],
+            'notes' => $s['notes'] ?? ''
+        ], $services ?? []), JSON_UNESCAPED_UNICODE) ?>
+    };
+
+    function getCurrentReqType() {
+        const checked = document.querySelector('input[name="type"]:checked');
+        return checked ? checked.value : 'material';
+    }
+
+    window.populateCatalogSelect = function(selectEl) {
+        if (!selectEl) return;
+        const reqType = getCurrentReqType();
+        const items = reqType === 'material' ? window.REQ_CATALOG.products : window.REQ_CATALOG.services;
+        const placeholder = reqType === 'material'
+            ? '-- Selecionar Produto Cadastrado (ou digite manualmente abaixo) --'
+            : '-- Selecionar Serviço Cadastrado (ou digite manualmente abaixo) --';
+
+        selectEl.innerHTML = '';
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = placeholder;
+        selectEl.appendChild(defaultOpt);
+
+        if (!items || items.length === 0) {
+            selectEl.classList.add('hidden');
+            return;
+        }
+
+        items.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.dataset.name = item.name;
+            opt.dataset.serial = item.serial || '';
+            opt.dataset.notes = item.notes || '';
+            opt.textContent = item.serial ? `${item.name} (N/S: ${item.serial})` : item.name;
+            selectEl.appendChild(opt);
+        });
+        selectEl.classList.remove('hidden');
+    };
+
+    function refreshAllCatalogSelects() {
+        document.querySelectorAll('#items_table_body .item-catalog-select').forEach(sel => {
+            window.populateCatalogSelect(sel);
+        });
+    }
+
+    function syncServiceRepairVisibility() {
+        const reqType = getCurrentReqType();
+        const repairSection = document.getElementById('serviceRepairSection');
+        const repairChk = document.getElementById('is_equipment_repair');
+        const picker = document.getElementById('repairProductPicker');
+
+        if (reqType === 'servico') {
+            repairSection?.classList.remove('hidden');
+            if (repairChk && repairChk.checked) {
+                picker?.classList.remove('hidden');
+            } else {
+                picker?.classList.add('hidden');
+            }
+        } else {
+            repairSection?.classList.add('hidden');
+            picker?.classList.add('hidden');
+        }
+    }
+
+    document.querySelectorAll('input[name="type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            refreshAllCatalogSelects();
+            syncServiceRepairVisibility();
+        });
+    });
+
+    document.getElementById('is_equipment_repair')?.addEventListener('change', syncServiceRepairVisibility);
+
+    document.getElementById('items_table_body')?.addEventListener('change', function(e) {
+        if (!e.target.classList.contains('item-catalog-select')) return;
+        const opt = e.target.options[e.target.selectedIndex];
+        if (!opt || !opt.value) return;
+
+        const row = e.target.closest('tr');
+        const descInput = row.querySelector('.item-desc-input, input[name="item_description[]"]');
+        const specsInput = row.querySelector('.item-specs-input, input[name="item_specs[]"]');
+        if (descInput) {
+            descInput.value = opt.dataset.name || opt.textContent;
+        }
+        if (specsInput && !specsInput.value.trim()) {
+            const extra = [];
+            if (opt.dataset.serial) extra.push('N/S: ' + opt.dataset.serial);
+            if (opt.dataset.notes) extra.push(opt.dataset.notes);
+            if (extra.length > 0) specsInput.value = extra.join(' | ');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        refreshAllCatalogSelects();
+        syncServiceRepairVisibility();
+    });
 </script>
 
 <!-- Modal Rápido de Novo Centro de Custo -->

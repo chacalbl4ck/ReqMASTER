@@ -69,6 +69,7 @@ use App\Controllers\SettingController;
 use App\Controllers\LicenseController;
 use App\Controllers\CostCenterController;
 use App\Controllers\LogController;
+use App\Controllers\CatalogController;
 
 // Cabeçalhos globais de segurança + verificação de bloqueio de indexação por bots
 $blockBots = false;
@@ -180,6 +181,7 @@ match ($route) {
     'fornecedores/ver' => (new SupplierController())->show(),
     'fornecedores/editar' => (new SupplierController())->edit(),
     'fornecedores/atualizar' => (new SupplierController())->update(),
+    'fornecedores/toggle-status' => (new SupplierController())->toggleStatus(),
     'fornecedores/excluir' => (new SupplierController())->delete(),
     'fornecedores/consultar-cnpj' => (new SupplierController())->consultarCnpj(),
 
@@ -190,7 +192,20 @@ match ($route) {
     'contratos/ver' => (new ContractController())->show(),
     'contratos/editar' => (new ContractController())->edit(),
     'contratos/atualizar' => (new ContractController())->update(),
+    'contratos/excluir' => (new ContractController())->delete(),
     'contratos/api-por-fornecedor' => (new ContractController())->apiBySupplier(),
+
+    // Catálogo de Produtos & Serviços
+    'produtos' => (new CatalogController())->products(),
+    'produtos/ver' => (new CatalogController())->showProduct(),
+    'produtos/salvar' => (new CatalogController())->saveProduct(),
+    'produtos/foto/excluir' => (new CatalogController())->deleteProductPhoto(),
+    'produtos/status' => (new CatalogController())->toggleProductStatus(),
+    'produtos/excluir' => (new CatalogController())->deleteProduct(),
+    'servicos' => (new CatalogController())->services(),
+    'servicos/salvar' => (new CatalogController())->saveService(),
+    'servicos/status' => (new CatalogController())->toggleServiceStatus(),
+    'servicos/excluir' => (new CatalogController())->deleteService(),
 
     // Configurações Globais
     'configuracoes' => (new SettingController())->index(),
@@ -211,6 +226,8 @@ match ($route) {
     // Relatórios
     'relatorios' => (new ReportController())->index(),
     'relatorios/exportar-csv' => (new ReportController())->exportCsv(),
+    'relatorios/manutencoes' => (new ReportController())->maintenance(),
+    'relatorios/manutencoes-csv' => (new ReportController())->exportMaintenanceCsv(),
 
     // Centros de Custo
     'centros-de-custo' => (new CostCenterController())->index(),

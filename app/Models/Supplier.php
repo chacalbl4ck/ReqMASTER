@@ -129,6 +129,16 @@ class Supplier extends Model
         ]);
     }
 
+    public function toggleStatus(int $id): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE suppliers
+            SET status = IF(status = 'ativo', 'inativo', 'ativo')
+            WHERE id = :id
+        ");
+        return $stmt->execute(['id' => $id]);
+    }
+
     public function delete(int $id): bool
     {
         $stmt = $this->db->prepare("DELETE FROM suppliers WHERE id = :id");

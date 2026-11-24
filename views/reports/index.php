@@ -10,7 +10,10 @@ require __DIR__ . '/../layout/header.php';
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Relatórios Gerenciais</h1>
             <p class="text-xs sm:text-sm text-slate-500">Análise de gastos em materiais, serviços, fornecedores e contratos.</p>
         </div>
-        <div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="<?= url('relatorios/manutencoes') ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-sm font-semibold transition">
+                <i class="fas fa-wrench"></i> Relatório de Manutenções & Reparos
+            </a>
             <!-- Botão de Exportação CSV para Excel -->
             <a href="<?= url('relatorios/exportar-csv?' . http_build_query($filters)) ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
                 <i class="fas fa-file-excel"></i> Exportar para Excel (CSV)

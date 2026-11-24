@@ -13,6 +13,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS `security_attempts`;
 DROP TABLE IF EXISTS `cost_centers`;
+DROP TABLE IF EXISTS `product_photos`;
+DROP TABLE IF EXISTS `products`;
+DROP TABLE IF EXISTS `services`;
 DROP TABLE IF EXISTS `settings`;
 DROP TABLE IF EXISTS `activity_logs`;
 DROP TABLE IF EXISTS `requisition_attachments`;
@@ -113,8 +116,12 @@ CREATE TABLE `requisitions` (
   `rejection_reason` TEXT NULL,
   `requester_signature` LONGTEXT NULL,
   `approver_signature` LONGTEXT NULL,
+  `is_equipment_repair` TINYINT(1) NOT NULL DEFAULT 0,
+  `linked_product_id` INT UNSIGNED NULL,
+  `maintenance_type` ENUM('reparo', 'preventiva') NULL DEFAULT NULL,
   `approved_by` INT UNSIGNED NULL,
   `approved_at` DATETIME NULL,
+  `completed_at` DATETIME NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT `fk_requisitions_user` FOREIGN KEY (`user_id`)
@@ -210,6 +217,46 @@ CREATE TABLE `cost_centers` (
   `code` VARCHAR(30) NOT NULL UNIQUE,
   `name` VARCHAR(120) NOT NULL,
   `description` VARCHAR(255) NULL,
+  `active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- 11. TABELA DE PRODUTOS / EQUIPAMENTOS
+-- --------------------------------------------------------
+CREATE TABLE `products` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(200) NOT NULL,
+  `serial_number` VARCHAR(120) NULL,
+  `notes` TEXT NULL,
+  `maintenance_interval_days` INT UNSIGNED NULL,
+  `last_maintenance_at` DATE NULL,
+  `active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- 12. TABELA DE FOTOS DOS PRODUTOS
+-- --------------------------------------------------------
+CREATE TABLE `product_photos` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `product_id` INT UNSIGNED NOT NULL,
+  `filename` VARCHAR(255) NOT NULL,
+  `original_name` VARCHAR(255) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_product_photos_product` FOREIGN KEY (`product_id`)
+    REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- 13. TABELA DE SERVIÇOS PRÉ-CADASTRADOS
+-- --------------------------------------------------------
+CREATE TABLE `services` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(200) NOT NULL,
+  `notes` TEXT NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP

@@ -29,6 +29,15 @@ require __DIR__ . '/../layout/header.php';
             <a href="<?= url('fornecedores/editar?id=' . $supplier['id']) ?>" class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition">
                 <i class="fas fa-pencil-alt mr-1"></i> Editar Cadastro
             </a>
+            <form method="POST" action="<?= url('fornecedores/toggle-status') ?>" class="inline">
+                <?= csrf_field() ?>
+                <input type="hidden" name="id" value="<?= $supplier['id'] ?>">
+                <input type="hidden" name="redirect_to" value="show">
+                <button type="submit" class="px-3.5 py-2 rounded-xl text-xs font-bold transition border <?= $supplier['status'] === 'ativo' ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200' ?>">
+                    <i class="fas <?= $supplier['status'] === 'ativo' ? 'fa-ban' : 'fa-check-circle' ?> mr-1"></i>
+                    <?= $supplier['status'] === 'ativo' ? 'Inativar Fornecedor' : 'Reativar Fornecedor' ?>
+                </button>
+            </form>
             <a href="<?= url('contratos/novo?supplier_id=' . $supplier['id']) ?>" class="px-3.5 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-bold transition">
                 <i class="fas fa-file-contract mr-1"></i> Cadastrar Contrato
             </a>

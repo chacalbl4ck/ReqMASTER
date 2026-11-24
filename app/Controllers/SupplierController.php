@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Helpers\Security;
+use App\Models\ActivityLog;
 use App\Models\Supplier;
 use App\Models\Contract;
 use App\Models\Requisition;
@@ -141,6 +142,31 @@ class SupplierController
         }
 
         redirect('fornecedores');
+    }
+
+    public function toggleStatus(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
+            flash('danger', 'Ação não permitida.');
+            redirect('fornecedores');
+        }
+
+        $id = (int)($_POST['id'] ?? 0);
+        $supplier = $this->supplierModel->findById($id);
+
+        if (!$supplier) {
+            flash('danger', 'Fornecedor não encontrado.');
+            redirect('fornecedores');
+        }
+
+        $this->supplierModel->toggleStatus($id);
+        $newStatus = ($supplier['status'] === 'ativo') ? 'inativo' : 'ativo';
+        (new ActivityLog())->log('Fornecedor', "Fornecedor '{$supplier['name']}' alterado para {$newStatus}.");
+
+        flash('success', "Fornecedor {$supplier['name']} marcado como " . ucfirst($newStatus) . ".");
+
+        $back = $_POST['redirect_to'] ?? 'fornecedores';
+        redirect($back === 'show' ? "fornecedores/ver?id={$id}" : 'fornecedores');
     }
 
     public function consultarCnpj(): void

@@ -31,6 +31,15 @@ $barColor = $pct > 85 ? 'bg-rose-500' : ($pct > 65 ? 'bg-amber-500' : 'bg-purple
             <a href="<?= url('contratos/editar?id=' . $contract['id']) ?>" class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition">
                 <i class="fas fa-pencil-alt mr-1"></i> Editar Contrato
             </a>
+            <?php if (\App\Helpers\Security::hasRole(['admin'])): ?>
+                <form method="POST" action="<?= url('contratos/excluir') ?>" class="inline" onsubmit="return confirm('Confirma excluir o contrato <?= htmlspecialchars($contract['contract_number']) ?>? Requisições vinculadas terão o vínculo removido.');">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= $contract['id'] ?>">
+                    <button type="submit" class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition">
+                        <i class="fas fa-trash-alt mr-1"></i> Excluir Contrato
+                    </button>
+                </form>
+            <?php endif; ?>
             <a href="<?= url('requisicoes/nova?supplier_id=' . $contract['supplier_id'] . '&contract_id=' . $contract['id']) ?>" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition">
                 <i class="fas fa-plus mr-1"></i> Nova Requisição sob este Contrato
             </a>

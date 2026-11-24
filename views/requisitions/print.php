@@ -277,6 +277,21 @@ $qrCodeUrl = $qrCodeUrl ?? null;
             <div class="info-item"><strong>E-mail do Requisitante:</strong> <?= htmlspecialchars($requisition['requester_email'] ?? '-') ?></div>
             <div class="info-item"><strong>Título / Finalidade:</strong> <?= htmlspecialchars($requisition['title']) ?></div>
             <div class="info-item"><strong>Prioridade:</strong> <?= strtoupper(htmlspecialchars($requisition['priority'])) ?> &bull; <strong>Prazo:</strong> <?= formatDate($requisition['deadline']) ?></div>
+            <?php if ($requisition['type'] === 'servico' && !empty($requisition['is_equipment_repair'])): ?>
+                <div class="info-item" style="grid-column: span 2; background: #fffbeb; border: 1px solid #fde68a; padding: 4px 8px; border-radius: 4px; margin-top: 3px;">
+                    <strong>Manutenção / Reparo de Equipamento ou Móvel:</strong>
+                    <?= ($requisition['maintenance_type'] ?? 'reparo') === 'preventiva' ? 'Manutenção Preventiva' : 'Reparo / Corretiva' ?>
+                    <?php if (!empty($requisition['linked_product_name'])): ?>
+                        &bull; <strong>Produto:</strong> <?= htmlspecialchars($requisition['linked_product_name']) ?>
+                        <?php if (!empty($requisition['linked_product_serial'])): ?>
+                            (N/S: <?= htmlspecialchars($requisition['linked_product_serial']) ?>)
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    <?php if (!empty($requisition['completed_at'])): ?>
+                        &bull; <strong>Concluída em:</strong> <?= formatDateTime($requisition['completed_at']) ?>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- 2. Para Quem Solicita (Fornecedor / Prestador) -->

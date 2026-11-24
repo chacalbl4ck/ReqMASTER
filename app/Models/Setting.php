@@ -64,6 +64,18 @@ class Setting extends Model
             if (!in_array('view_token', $columns, true)) {
                 $this->db->exec("ALTER TABLE `requisitions` ADD COLUMN `view_token` VARCHAR(128) NULL UNIQUE AFTER `code`;");
             }
+            if (!in_array('is_equipment_repair', $columns, true)) {
+                $this->db->exec("ALTER TABLE `requisitions` ADD COLUMN `is_equipment_repair` TINYINT(1) NOT NULL DEFAULT 0 AFTER `approver_signature`;");
+            }
+            if (!in_array('linked_product_id', $columns, true)) {
+                $this->db->exec("ALTER TABLE `requisitions` ADD COLUMN `linked_product_id` INT UNSIGNED NULL AFTER `is_equipment_repair`;");
+            }
+            if (!in_array('maintenance_type', $columns, true)) {
+                $this->db->exec("ALTER TABLE `requisitions` ADD COLUMN `maintenance_type` ENUM('reparo', 'preventiva') NULL DEFAULT NULL AFTER `linked_product_id`;");
+            }
+            if (!in_array('completed_at', $columns, true)) {
+                $this->db->exec("ALTER TABLE `requisitions` ADD COLUMN `completed_at` DATETIME NULL AFTER `approved_at`;");
+            }
 
             // 4. Verifica e adiciona colunas de avatar e 2FA TOTP na tabela `users`
             $userColsStmt = $this->db->query("SHOW COLUMNS FROM `users`");
@@ -102,6 +114,44 @@ class Setting extends Model
                     `code` VARCHAR(30) NOT NULL UNIQUE,
                     `name` VARCHAR(120) NOT NULL,
                     `description` VARCHAR(255) NULL,
+                    `active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            // 4d. Tabelas de Produtos/Equipamentos, Fotos de Produtos e Serviços
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `products` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(200) NOT NULL,
+                    `serial_number` VARCHAR(120) NULL,
+                    `notes` TEXT NULL,
+                    `maintenance_interval_days` INT UNSIGNED NULL,
+                    `last_maintenance_at` DATE NULL,
+                    `active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `product_photos` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `product_id` INT UNSIGNED NOT NULL,
+                    `filename` VARCHAR(255) NOT NULL,
+                    `original_name` VARCHAR(255) NOT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT `fk_product_photos_product` FOREIGN KEY (`product_id`)
+                        REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `services` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(200) NOT NULL,
+                    `notes` TEXT NULL,
                     `active` TINYINT(1) NOT NULL DEFAULT 1,
                     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP

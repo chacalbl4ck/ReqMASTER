@@ -63,6 +63,48 @@ $companyCnpj = $companySettings['company_cnpj'] ?? '';
                 </div>
             </div>
 
+            <!-- Opção exclusiva de Prestação de Serviços: Reparo/Manutenção de Equipamento ou Móvel -->
+            <div id="serviceRepairSection" class="<?= ($requisition['type'] ?? '') === 'servico' ? '' : 'hidden' ?> rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-4">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_equipment_repair" id="is_equipment_repair" value="1"
+                           <?= !empty($requisition['is_equipment_repair']) ? 'checked' : '' ?>
+                           class="mt-0.5 rounded border-amber-400 text-indigo-600 focus:ring-indigo-500">
+                    <div>
+                        <span class="block text-sm font-bold text-slate-900">
+                            <i class="fas fa-wrench text-amber-600 mr-1"></i> É uma solicitação de reparo de equipamento ou móvel?
+                        </span>
+                        <span class="block text-xs text-slate-600 mt-0.5">
+                            Ao marcar esta opção, libera a seleção abaixo para vincular um produto/equipamento cadastrado nesta requisição (reparo ou manutenção preventiva).
+                        </span>
+                    </div>
+                </label>
+
+                <div id="repairProductPicker" class="<?= !empty($requisition['is_equipment_repair']) ? '' : 'hidden' ?> grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-amber-200/80">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                            Produto / Equipamento Vinculado ao Serviço
+                        </label>
+                        <select name="linked_product_id" id="linked_product_id" class="w-full text-sm rounded-xl border-amber-300 bg-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            <option value="">-- Selecione um produto cadastrado (opcional) --</option>
+                            <?php foreach ($products ?? [] as $prod): ?>
+                                <option value="<?= (int)$prod['id'] ?>" <?= ((int)($requisition['linked_product_id'] ?? 0) === (int)$prod['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($prod['name']) ?><?= !empty($prod['serial_number']) ? ' • N/S: ' . htmlspecialchars($prod['serial_number']) : '' ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                            Tipo de Manutenção
+                        </label>
+                        <select name="maintenance_type" id="maintenance_type" class="w-full text-sm rounded-xl border-amber-300 bg-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            <option value="reparo" <?= ($requisition['maintenance_type'] ?? 'reparo') === 'reparo' ? 'selected' : '' ?>>Reparo / Manutenção Corretiva</option>
+                            <option value="preventiva" <?= ($requisition['maintenance_type'] ?? '') === 'preventiva' ? 'selected' : '' ?>>Manutenção Preventiva</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <!-- Centro de Custo / Departamento -->
                 <div>
@@ -179,10 +221,11 @@ $companyCnpj = $companySettings['company_cnpj'] ?? '';
                             <tr>
                                 <td class="py-2.5 px-3 text-slate-400 font-mono item-row-num">1</td>
                                 <td class="py-2.5 px-3">
-                                    <input type="text" name="item_description[]" required class="w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                    <select class="item-catalog-select hidden w-full text-[11px] rounded-lg border-indigo-200 bg-indigo-50/40 text-slate-700 mb-1 focus:border-indigo-500 focus:ring-indigo-500"></select>
+                                    <input type="text" name="item_description[]" required class="item-desc-input w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
                                 </td>
                                 <td class="py-2.5 px-3">
-                                    <input type="text" name="item_specs[]" class="w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Marca / Ref">
+                                    <input type="text" name="item_specs[]" class="item-specs-input w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Marca / Ref">
                                 </td>
                                 <td class="py-2.5 px-3 text-center">
                                     <input type="text" name="item_unit[]" value="un" class="w-full text-xs rounded-lg border-slate-300 text-center focus:border-indigo-500 focus:ring-indigo-500">
@@ -203,10 +246,11 @@ $companyCnpj = $companySettings['company_cnpj'] ?? '';
                                 <tr>
                                     <td class="py-2.5 px-3 text-slate-400 font-mono item-row-num"><?= $idx + 1 ?></td>
                                     <td class="py-2.5 px-3">
-                                        <input type="text" name="item_description[]" required value="<?= htmlspecialchars($it['description']) ?>" class="w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                        <select class="item-catalog-select hidden w-full text-[11px] rounded-lg border-indigo-200 bg-indigo-50/40 text-slate-700 mb-1 focus:border-indigo-500 focus:ring-indigo-500"></select>
+                                        <input type="text" name="item_description[]" required value="<?= htmlspecialchars($it['description']) ?>" class="item-desc-input w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
                                     </td>
                                     <td class="py-2.5 px-3">
-                                        <input type="text" name="item_specs[]" value="<?= htmlspecialchars($it['technical_specs'] ?? '') ?>" class="w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Marca / Ref">
+                                        <input type="text" name="item_specs[]" value="<?= htmlspecialchars($it['technical_specs'] ?? '') ?>" class="item-specs-input w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Marca / Ref">
                                     </td>
                                     <td class="py-2.5 px-3 text-center">
                                         <input type="text" name="item_unit[]" value="<?= htmlspecialchars($it['unit']) ?>" class="w-full text-xs rounded-lg border-slate-300 text-center focus:border-indigo-500 focus:ring-indigo-500">
@@ -326,10 +370,11 @@ $companyCnpj = $companySettings['company_cnpj'] ?? '';
             tr.innerHTML = `
                 <td class="py-2.5 px-3 text-slate-400 font-mono item-row-num">${rowCount}</td>
                 <td class="py-2.5 px-3">
-                    <input type="text" name="item_description[]" required class="w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    <select class="item-catalog-select hidden w-full text-[11px] rounded-lg border-indigo-200 bg-indigo-50/40 text-slate-700 mb-1 focus:border-indigo-500 focus:ring-indigo-500"></select>
+                    <input type="text" name="item_description[]" required class="item-desc-input w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
                 </td>
                 <td class="py-2.5 px-3">
-                    <input type="text" name="item_specs[]" class="w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Marca / Ref">
+                    <input type="text" name="item_specs[]" class="item-specs-input w-full text-xs rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Marca / Ref">
                 </td>
                 <td class="py-2.5 px-3 text-center">
                     <input type="text" name="item_unit[]" value="un" class="w-full text-xs rounded-lg border-slate-300 text-center focus:border-indigo-500 focus:ring-indigo-500">
@@ -346,8 +391,96 @@ $companyCnpj = $companySettings['company_cnpj'] ?? '';
                 </td>
             `;
             tableBody.appendChild(tr);
+            populateEditCatalogSelect(tr.querySelector('.item-catalog-select'));
         });
 
+        const EDIT_CATALOG = {
+            products: <?= json_encode(array_map(fn($p) => [
+                'id' => (int)$p['id'],
+                'name' => $p['name'],
+                'serial' => $p['serial_number'] ?? '',
+                'notes' => $p['notes'] ?? ''
+            ], $products ?? []), JSON_UNESCAPED_UNICODE) ?>,
+            services: <?= json_encode(array_map(fn($s) => [
+                'id' => (int)$s['id'],
+                'name' => $s['name'],
+                'notes' => $s['notes'] ?? ''
+            ], $services ?? []), JSON_UNESCAPED_UNICODE) ?>
+        };
+
+        function getEditType() {
+            const c = document.querySelector('input[name="type"]:checked');
+            return c ? c.value : 'material';
+        }
+
+        function populateEditCatalogSelect(sel) {
+            if (!sel) return;
+            const t = getEditType();
+            const list = t === 'material' ? EDIT_CATALOG.products : EDIT_CATALOG.services;
+            sel.innerHTML = '';
+            const def = document.createElement('option');
+            def.value = '';
+            def.textContent = t === 'material'
+                ? '-- Selecionar Produto Cadastrado (Opcional) --'
+                : '-- Selecionar Serviço Cadastrado (Opcional) --';
+            sel.appendChild(def);
+            if (!list || list.length === 0) {
+                sel.classList.add('hidden');
+                return;
+            }
+            list.forEach(item => {
+                const o = document.createElement('option');
+                o.value = item.id;
+                o.dataset.name = item.name;
+                o.dataset.serial = item.serial || '';
+                o.dataset.notes = item.notes || '';
+                o.textContent = item.serial ? `${item.name} (N/S: ${item.serial})` : item.name;
+                sel.appendChild(o);
+            });
+            sel.classList.remove('hidden');
+        }
+
+        function syncEditRepairUI() {
+            const t = getEditType();
+            const sec = document.getElementById('serviceRepairSection');
+            const chk = document.getElementById('is_equipment_repair');
+            const picker = document.getElementById('repairProductPicker');
+            if (t === 'servico') {
+                sec?.classList.remove('hidden');
+                picker?.classList.toggle('hidden', !(chk && chk.checked));
+            } else {
+                sec?.classList.add('hidden');
+                picker?.classList.add('hidden');
+            }
+        }
+
+        document.querySelectorAll('input[name="type"]').forEach(r => {
+            r.addEventListener('change', () => {
+                tableBody.querySelectorAll('.item-catalog-select').forEach(populateEditCatalogSelect);
+                syncEditRepairUI();
+            });
+        });
+
+        document.getElementById('is_equipment_repair')?.addEventListener('change', syncEditRepairUI);
+
+        tableBody.addEventListener('change', function(e) {
+            if (!e.target.classList.contains('item-catalog-select')) return;
+            const opt = e.target.options[e.target.selectedIndex];
+            if (!opt || !opt.value) return;
+            const row = e.target.closest('tr');
+            const desc = row.querySelector('.item-desc-input');
+            const specs = row.querySelector('.item-specs-input');
+            if (desc) desc.value = opt.dataset.name || opt.textContent;
+            if (specs && !specs.value.trim()) {
+                const extra = [];
+                if (opt.dataset.serial) extra.push('N/S: ' + opt.dataset.serial);
+                if (opt.dataset.notes) extra.push(opt.dataset.notes);
+                if (extra.length > 0) specs.value = extra.join(' | ');
+            }
+        });
+
+        tableBody.querySelectorAll('.item-catalog-select').forEach(populateEditCatalogSelect);
+        syncEditRepairUI();
         recalcAll();
     });
 </script>

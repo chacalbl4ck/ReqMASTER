@@ -128,6 +128,13 @@ require __DIR__ . '/../layout/header.php';
                                         <a href="<?= url('fornecedores/editar?id=' . $s['id']) ?>" class="p-1.5 text-slate-400 hover:text-slate-700 transition" title="Editar">
                                             <i class="fas fa-pencil-alt"></i>
                                         </a>
+                                        <form method="POST" action="<?= url('fornecedores/toggle-status') ?>" class="inline">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="id" value="<?= $s['id'] ?>">
+                                            <button type="submit" class="p-1.5 <?= $s['status'] === 'ativo' ? 'text-slate-400 hover:text-amber-600' : 'text-emerald-500 hover:text-emerald-700' ?> transition" title="<?= $s['status'] === 'ativo' ? 'Inativar Fornecedor' : 'Reativar Fornecedor' ?>">
+                                                <i class="fas <?= $s['status'] === 'ativo' ? 'fa-ban' : 'fa-check-circle' ?>"></i>
+                                            </button>
+                                        </form>
                                         <a href="<?= url('requisicoes/nova?supplier_id=' . $s['id']) ?>" class="p-1.5 text-indigo-600 hover:text-indigo-800 transition" title="Abrir Requisição para este Fornecedor">
                                             <i class="fas fa-plus-circle"></i>
                                         </a>

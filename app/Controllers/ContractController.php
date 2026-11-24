@@ -181,4 +181,32 @@ class ContractController
         echo json_encode($contracts);
         exit;
     }
+
+    public function delete(): void
+    {
+        Security::requireRole(['admin']);
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
+            flash('danger', 'Ação não permitida.');
+            redirect('contratos');
+        }
+
+        $id = (int)($_POST['id'] ?? 0);
+        $contract = $this->contractModel->findById($id);
+        if (!$contract) {
+            flash('danger', 'Contrato não encontrado.');
+            redirect('contratos');
+        }
+
+        try {
+            $this->contractModel->delete($id);
+            $log = new ActivityLog();
+            $log->log('Exclusão de Contrato', "Contrato {$contract['contract_number']} ({$contract['title']}) excluído pelo administrador.");
+            flash('success', "Contrato {$contract['contract_number']} excluído com sucesso.");
+        } catch (\Exception $e) {
+            flash('danger', 'Não foi possível excluir este contrato: ' . $e->getMessage());
+        }
+
+        redirect('contratos');
+    }
 }
