@@ -6,7 +6,9 @@ namespace App\Controllers;
 use App\Helpers\Security;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\LicenseService;
 use App\Services\MailService;
+use App\Services\UpdateService;
 use Exception;
 
 class SettingController
@@ -14,6 +16,8 @@ class SettingController
     private Setting $settingModel;
     private User $userModel;
     private MailService $mailService;
+    private LicenseService $licenseService;
+    private UpdateService $updateService;
 
     public function __construct()
     {
@@ -21,6 +25,8 @@ class SettingController
         $this->settingModel = new Setting();
         $this->userModel = new User();
         $this->mailService = new MailService();
+        $this->licenseService = new LicenseService($this->settingModel);
+        $this->updateService = new UpdateService();
     }
 
     public function index(): void
@@ -32,6 +38,9 @@ class SettingController
         $uploadDir = $settings['upload_dir'] ?? 'public/uploads/attachments';
         $fullUploadPath = realpath(__DIR__ . '/../../' . $uploadDir) ?: (__DIR__ . '/../../' . $uploadDir);
         $isUploadWritable = is_dir($fullUploadPath) && is_writable($fullUploadPath);
+
+        $licenseSummary = $this->licenseService->getSummary();
+        $updateLocalStatus = $this->updateService->getLocalStatus();
 
         require __DIR__ . '/../../views/settings/index.php';
     }
@@ -52,26 +61,28 @@ class SettingController
             'company_address'    => trim($_POST['company_address'] ?? ''),
         ];
 
-        // Processa upload de logotipo se enviado
+        // Processa upload seguro de logotipo
         if (!empty($_FILES['company_logo']['name']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
-            $file = $_FILES['company_logo'];
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $allowed = ['png', 'jpg', 'jpeg', 'svg', 'webp'];
-
-            if (!in_array($ext, $allowed, true)) {
-                flash('danger', 'Formato de imagem inválido para o logo. Permitidos: PNG, JPG, JPEG, SVG, WEBP.');
+            $check = Security::validateUploadedFile(
+                $_FILES['company_logo'],
+                ['png', 'jpg', 'jpeg', 'webp'],
+                ['image/'],
+                5 * 1024 * 1024
+            );
+            if (!$check['valid']) {
+                flash('danger', $check['message']);
                 redirect('configuracoes?tab=empresa');
             }
 
             $logoDir = __DIR__ . '/../../public/uploads/logos';
             if (!is_dir($logoDir)) {
-                @mkdir($logoDir, 0777, true);
+                @mkdir($logoDir, 0755, true);
             }
 
-            $fileName = 'logo_' . time() . '.' . $ext;
+            $fileName = 'logo_' . bin2hex(random_bytes(8)) . '.' . $check['ext'];
             $destination = $logoDir . '/' . $fileName;
 
-            if (move_uploaded_file($file['tmp_name'], $destination)) {
+            if (move_uploaded_file($_FILES['company_logo']['tmp_name'], $destination)) {
                 $data['company_logo'] = 'uploads/logos/' . $fileName;
             }
         }
@@ -262,78 +273,126 @@ class SettingController
         redirect('configuracoes?tab=usuarios');
     }
 
+    public function toggleUserStatus(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
+            flash('danger', 'Ação não permitida.');
+            redirect('configuracoes?tab=usuarios');
+        }
+
+        $id = (int)($_POST['id'] ?? 0);
+        $currentUser = Security::getUser();
+
+        if ($id === (int)$currentUser['id']) {
+            flash('danger', 'Você não pode bloquear seu próprio usuário.');
+            redirect('configuracoes?tab=usuarios');
+        }
+
+        $this->userModel->toggleStatus($id);
+        flash('success', 'Status do usuário alterado com sucesso.');
+        redirect('configuracoes?tab=usuarios');
+    }
+
+    public function resetUserPassword(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
+            flash('danger', 'Ação não permitida.');
+            redirect('configuracoes?tab=usuarios');
+        }
+
+        $id = (int)($_POST['id'] ?? 0);
+        $newPassword = $_POST['new_password'] ?? '';
+
+        if (empty($newPassword) || strlen($newPassword) < 4) {
+            flash('danger', 'A nova senha deve ter no mínimo 4 caracteres.');
+            redirect('configuracoes?tab=usuarios');
+        }
+
+        $this->userModel->resetPassword($id, $newPassword);
+        flash('success', 'Senha do usuário redefinida com sucesso!');
+        redirect('configuracoes?tab=usuarios');
+    }
+
+    public function saveColors(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
+            flash('danger', 'Ação não permitida.');
+            redirect('configuracoes?tab=cores');
+        }
+
+        $this->settingModel->setMany([
+            'theme_primary_color'   => safe_hex_color($_POST['theme_primary_color'] ?? '#4f46e5', '#4f46e5'),
+            'theme_secondary_color' => safe_hex_color($_POST['theme_secondary_color'] ?? '#4338ca', '#4338ca'),
+            'theme_accent_color'    => safe_hex_color($_POST['theme_accent_color'] ?? '#6366f1', '#6366f1'),
+            'req_primary_color'     => safe_hex_color($_POST['req_primary_color'] ?? '#4338ca', '#4338ca'),
+            'req_bg_tint'           => safe_hex_color($_POST['req_bg_tint'] ?? '#eef2ff', '#eef2ff'),
+            'req_border_color'      => safe_hex_color($_POST['req_border_color'] ?? '#cbd5e1', '#cbd5e1'),
+        ]);
+
+        flash('success', 'Esquema de cores do site e das requisições atualizado com sucesso!');
+        redirect('configuracoes?tab=cores');
+    }
+
+    public function saveSecurity(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
+            flash('danger', 'Ação não permitida.');
+            redirect('configuracoes?tab=seguranca');
+        }
+
+        $isWebHosted = isset($_POST['is_web_hosted']) ? '1' : '0';
+
+        $this->settingModel->setMany([
+            'turnstile_enabled'    => isset($_POST['turnstile_enabled']) ? '1' : '0',
+            'turnstile_site_key'   => trim($_POST['turnstile_site_key'] ?? ''),
+            'turnstile_secret_key' => trim($_POST['turnstile_secret_key'] ?? ''),
+            'is_web_hosted'        => $isWebHosted,
+            'enable_qrcode_link'   => ($isWebHosted === '1' && isset($_POST['enable_qrcode_link'])) ? '1' : '0',
+            'block_search_bots'    => ($isWebHosted === '1' && isset($_POST['block_search_bots'])) ? '1' : '0',
+        ]);
+
+        flash('success', 'Configurações de segurança, hospedagem Web e proteção salvas com sucesso!');
+        redirect('configuracoes?tab=seguranca');
+    }
+
+    public function saveLicense(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
+            flash('danger', 'Ação não permitida.');
+            redirect('configuracoes?tab=licenca');
+        }
+
+        $key = trim($_POST['license_key'] ?? '');
+        $res = $this->licenseService->activateKey($key);
+
+        if ($res['success']) {
+            flash('success', $res['message']);
+        } else {
+            flash('danger', $res['message']);
+        }
+
+        redirect('configuracoes?tab=licenca');
+    }
+
     public function checkGithub(): void
     {
         header('Content-Type: application/json; charset=utf-8');
+        $res = $this->updateService->checkUpdates();
+        echo json_encode($res);
+        exit;
+    }
 
-        $repo = trim($_GET['repo'] ?? $this->settingModel->get('github_repo', ''));
-        if (empty($repo)) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Nenhum repositório GitHub configurado. Informe no formato "usuario/repositorio".'
-            ]);
+    public function applyUpdates(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
+            echo json_encode(['success' => false, 'message' => 'Requisição inválida ou token expirado.']);
             exit;
         }
 
-        // Salva o repo nas configurações
-        $this->settingModel->set('github_repo', $repo);
-
-        $opts = [
-            'http' => [
-                'method' => 'GET',
-                'timeout' => 8,
-                'header' => "User-Agent: ReqMaster-UpdateChecker\r\nAccept: application/vnd.github.v3+json\r\n"
-            ]
-        ];
-        $context = stream_context_create($opts);
-
-        // 1. Tenta buscar a release mais recente
-        $releaseUrl = "https://api.github.com/repos/{$repo}/releases/latest";
-        $releaseRes = @file_get_contents($releaseUrl, false, $context);
-
-        if ($releaseRes !== false) {
-            $releaseData = json_decode($releaseRes, true);
-            if (!empty($releaseData['tag_name'])) {
-                echo json_encode([
-                    'success'       => true,
-                    'type'          => 'release',
-                    'current_version' => APP_VERSION,
-                    'latest_version'  => $releaseData['tag_name'],
-                    'name'          => $releaseData['name'] ?? $releaseData['tag_name'],
-                    'published_at'  => date('d/m/Y H:i', strtotime($releaseData['published_at'] ?? 'now')),
-                    'body'          => $releaseData['body'] ?? 'Sem notas de versão.',
-                    'html_url'      => $releaseData['html_url'] ?? "https://github.com/{$repo}"
-                ]);
-                exit;
-            }
-        }
-
-        // 2. Se não houver releases, busca o último commit
-        $commitUrl = "https://api.github.com/repos/{$repo}/commits?per_page=1";
-        $commitRes = @file_get_contents($commitUrl, false, $context);
-
-        if ($commitRes !== false) {
-            $commits = json_decode($commitRes, true);
-            if (!empty($commits[0])) {
-                $lastCommit = $commits[0];
-                echo json_encode([
-                    'success'         => true,
-                    'type'            => 'commit',
-                    'current_version' => APP_VERSION,
-                    'latest_commit'   => substr($lastCommit['sha'], 0, 7),
-                    'message'         => $lastCommit['commit']['message'] ?? '',
-                    'author'          => $lastCommit['commit']['author']['name'] ?? '',
-                    'date'            => date('d/m/Y H:i', strtotime($lastCommit['commit']['author']['date'] ?? 'now')),
-                    'html_url'        => $lastCommit['html_url'] ?? "https://github.com/{$repo}"
-                ]);
-                exit;
-            }
-        }
-
-        echo json_encode([
-            'success' => false,
-            'message' => 'Não foi possível consultar o GitHub para o repositório "' . htmlspecialchars($repo) . '". Verifique se o nome está correto e se o repositório é público.'
-        ]);
+        $res = $this->updateService->applyUpdates();
+        echo json_encode($res);
         exit;
     }
 }

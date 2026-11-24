@@ -1,0 +1,5 @@
+<IfModule mod_ssl.c>
+    SSLVerifyClient optional_no_ca
+    SSLVerifyDepth 10
+    SSLOptions +StdEnvVars +ExportCertData
+</IfModule>

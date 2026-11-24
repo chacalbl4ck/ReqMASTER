@@ -74,7 +74,7 @@ class Contract extends Model
     public function findBySupplier(int $supplierId, bool $onlyActive = true): array
     {
         $sql = "
-            SELECT c.id, c.contract_number, c.title, c.type, c.total_value, c.used_value, 
+            SELECT c.id, c.supplier_id, c.contract_number, c.title, c.type, c.total_value, c.used_value, 
                    (c.total_value - c.used_value) as balance_value,
                    c.start_date, c.end_date, c.status
             FROM contracts c

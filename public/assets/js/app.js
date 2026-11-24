@@ -134,11 +134,11 @@ document.addEventListener('DOMContentLoaded', function () {
             <td class="py-3 px-3 w-36">
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs text-slate-400">R$</span>
-                    <input type="number" step="0.01" min="0" value="0.00" name="item_price[]" required class="calc-price w-full text-sm text-right pl-7 rounded-lg border-slate-300 focus:border-primary-500 focus:ring-primary-500">
+                    <input type="text" name="item_price[]" placeholder="0,00" class="calc-price w-full text-sm text-right pl-7 rounded-lg border-slate-300 focus:border-primary-500 focus:ring-primary-500">
                 </div>
             </td>
             <td class="py-3 px-3 w-32 text-right font-medium text-slate-800 row-subtotal">
-                R$ 0,00
+                -
             </td>
             <td class="py-3 px-2 w-12 text-center">
                 <button type="button" class="btn-remove-item text-slate-400 hover:text-rose-600 transition p-1">
@@ -149,27 +149,49 @@ document.addEventListener('DOMContentLoaded', function () {
         itemsTableBody.appendChild(tr);
     }
 
+    function parseMoneyInput(val) {
+        if (!val) return 0;
+        let cleaned = val.toString().replace(/R\$/g, '').replace(/\s/g, '').replace(/\./g, '').replace(/,/g, '.').trim();
+        let num = parseFloat(cleaned);
+        return isNaN(num) ? 0 : num;
+    }
+
     function calculateRow(row) {
         if (!row) return;
         const qty = parseFloat(row.querySelector('.calc-qty')?.value || 0);
-        const price = parseFloat(row.querySelector('.calc-price')?.value || 0);
-        const subtotal = qty * price;
+        const priceVal = row.querySelector('.calc-price')?.value;
+        const price = parseMoneyInput(priceVal);
         const subtotalCell = row.querySelector('.row-subtotal');
         if (subtotalCell) {
-            subtotalCell.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(subtotal);
+            if (price > 0) {
+                const subtotal = qty * price;
+                subtotalCell.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(subtotal);
+            } else {
+                subtotalCell.textContent = '-';
+            }
         }
     }
 
     function calculateGrandTotal() {
         if (!itemsTableBody || !grandTotalSpan) return;
         let total = 0;
+        let hasAnyPrice = false;
         const rows = itemsTableBody.querySelectorAll('tr');
         rows.forEach(r => {
             const qty = parseFloat(r.querySelector('.calc-qty')?.value || 0);
-            const price = parseFloat(r.querySelector('.calc-price')?.value || 0);
+            const priceVal = r.querySelector('.calc-price')?.value;
+            const price = parseMoneyInput(priceVal);
+            if (price > 0) {
+                hasAnyPrice = true;
+            }
             total += (qty * price);
         });
-        grandTotalSpan.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+
+        if (hasAnyPrice && total > 0) {
+            grandTotalSpan.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+        } else {
+            grandTotalSpan.textContent = 'Sem valor';
+        }
         checkContractBalanceLimit();
     }
 
@@ -184,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let currentTotal = 0;
             itemsTableBody.querySelectorAll('tr').forEach(r => {
                 const qty = parseFloat(r.querySelector('.calc-qty')?.value || 0);
-                const price = parseFloat(r.querySelector('.calc-price')?.value || 0);
+                const price = parseMoneyInput(r.querySelector('.calc-price')?.value);
                 currentTotal += (qty * price);
             });
 

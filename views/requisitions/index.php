@@ -160,6 +160,15 @@ require __DIR__ . '/../layout/header.php';
                                         <a href="<?= url('requisicoes/imprimir?id=' . $r['id']) ?>" target="_blank" class="p-1.5 text-slate-400 hover:text-slate-700 transition" title="Imprimir Folha Oficial">
                                             <i class="fas fa-print"></i>
                                         </a>
+                                        <?php if (\App\Helpers\Security::hasRole(['admin'])): ?>
+                                            <form method="POST" action="<?= url('requisicoes/excluir') ?>" class="inline" onsubmit="return confirm('Deseja excluir a requisição <?= $r['code'] ?>?');">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                                <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Excluir Requisição">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

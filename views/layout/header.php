@@ -3,15 +3,21 @@ declare(strict_types=1);
 $currentUser = \App\Helpers\Security::getUser();
 $flash = get_flash();
 $currentRoute = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+
+$settingModel = new \App\Models\Setting();
+$allSettings = $settingModel->getAll();
+$companyLogo = $allSettings['company_logo'] ?? '';
+$companyName = $allSettings['company_name'] ?? 'ReqMaster';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?= bot_protection_meta($allSettings) ?>
     <title><?= APP_NAME ?></title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS CDN com plugin forms -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -39,6 +45,7 @@ $currentRoute = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <?= theme_css_vars($allSettings) ?>
     <style>
         body { font-family: 'Inter', sans-serif; }
         [x-cloak] { display: none !important; }
@@ -52,49 +59,73 @@ $currentRoute = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
                 <!-- Logotipo e Navegação Principal -->
                 <div class="flex items-center">
                     <a href="<?= url() ?>" class="flex items-center gap-2.5 text-primary-600 hover:text-primary-700 font-bold text-xl tracking-tight transition">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-primary-500/20">
-                            <i class="fas fa-file-invoice text-lg"></i>
-                        </div>
-                        <span>Req<span class="text-slate-900">Master</span></span>
+                        <?php 
+                        $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($companyLogo, '/')) : '';
+                        if (!empty($companyLogo) && file_exists($logoPhysical)): 
+                        ?>
+                            <img src="<?= asset($companyLogo) ?>" alt="<?= htmlspecialchars($companyName) ?>" class="h-10 max-h-10 max-w-[180px] object-contain">
+                        <?php else: ?>
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-primary-500/20">
+                                <i class="fas fa-file-invoice text-lg"></i>
+                            </div>
+                            <span>Req<span class="text-slate-900">Master</span></span>
+                        <?php endif; ?>
                     </a>
 
                     <!-- Menu de Navegação Desktop -->
-                    <nav class="hidden md:ml-8 md:flex md:space-x-1">
-                        <a href="<?= url() ?>" class="px-3 py-2 rounded-lg text-sm font-medium transition <?= (empty($_GET['route']) || $_GET['route'] === '/') ? 'bg-primary-50 text-primary-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' ?>">
-                            <i class="fas fa-chart-pie mr-1.5 text-slate-400"></i> Painel
+                    <nav class="hidden md:ml-6 md:flex md:items-center md:space-x-1 lg:space-x-1.5">
+                        <a href="<?= url() ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm whitespace-nowrap transition duration-150 <?= is_active('') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-100 font-medium' ?>">
+                            <i class="fas fa-chart-pie text-sm <?= is_active('') ? 'text-white' : 'text-slate-400' ?>"></i>
+                            <span>Painel</span>
                         </a>
-                        <a href="<?= url('requisicoes') ?>" class="px-3 py-2 rounded-lg text-sm font-medium transition <?= (isset($_GET['route']) && str_starts_with($_GET['route'], 'requisicoes')) ? 'bg-primary-50 text-primary-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' ?>">
-                            <i class="fas fa-clipboard-list mr-1.5 text-slate-400"></i> Requisições
+                        <a href="<?= url('requisicoes') ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm whitespace-nowrap transition duration-150 <?= is_active('requisicoes') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-100 font-medium' ?>">
+                            <i class="fas fa-clipboard-list text-sm <?= is_active('requisicoes') ? 'text-white' : 'text-slate-400' ?>"></i>
+                            <span>Requisições</span>
                         </a>
-                        <a href="<?= url('fornecedores') ?>" class="px-3 py-2 rounded-lg text-sm font-medium transition <?= (isset($_GET['route']) && str_starts_with($_GET['route'], 'fornecedores')) ? 'bg-primary-50 text-primary-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' ?>">
-                            <i class="fas fa-building mr-1.5 text-slate-400"></i> Para Quem Solicitar
+                        <a href="<?= url('fornecedores') ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm whitespace-nowrap transition duration-150 <?= is_active('fornecedores') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-100 font-medium' ?>" title="Fornecedores e Prestadores">
+                            <i class="fas fa-building text-sm <?= is_active('fornecedores') ? 'text-white' : 'text-slate-400' ?>"></i>
+                            <span>Para Quem Solicitar</span>
                         </a>
-                        <a href="<?= url('contratos') ?>" class="px-3 py-2 rounded-lg text-sm font-medium transition <?= (isset($_GET['route']) && str_starts_with($_GET['route'], 'contratos')) ? 'bg-primary-50 text-primary-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' ?>">
-                            <i class="fas fa-file-contract mr-1.5 text-slate-400"></i> Contratos
+                        <a href="<?= url('contratos') ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm whitespace-nowrap transition duration-150 <?= is_active('contratos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-100 font-medium' ?>">
+                            <i class="fas fa-file-contract text-sm <?= is_active('contratos') ? 'text-white' : 'text-slate-400' ?>"></i>
+                            <span>Contratos</span>
                         </a>
-                        <a href="<?= url('relatorios') ?>" class="px-3 py-2 rounded-lg text-sm font-medium transition <?= (isset($_GET['route']) && str_starts_with($_GET['route'], 'relatorios')) ? 'bg-primary-50 text-primary-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' ?>">
-                            <i class="fas fa-file-alt mr-1.5 text-slate-400"></i> Relatórios
+                        <a href="<?= url('relatorios') ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm whitespace-nowrap transition duration-150 <?= is_active('relatorios') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-100 font-medium' ?>">
+                            <i class="fas fa-file-alt text-sm <?= is_active('relatorios') ? 'text-white' : 'text-slate-400' ?>"></i>
+                            <span>Relatórios</span>
                         </a>
+                        <?php if (\App\Helpers\Security::hasRole(['admin'])): ?>
+                            <a href="<?= url('configuracoes') ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm whitespace-nowrap transition duration-150 <?= is_active('configuracoes') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-100 font-medium' ?>">
+                                <i class="fas fa-cog text-sm <?= is_active('configuracoes') ? 'text-white' : 'text-slate-400' ?>"></i>
+                                <span>Configurações</span>
+                            </a>
+                        <?php endif; ?>
                     </nav>
                 </div>
 
                 <!-- Botão de Ação Rápida e Perfil -->
-                <div class="flex items-center space-x-3">
-                    <a href="<?= url('requisicoes/nova') ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition shadow-sm shadow-primary-600/30">
+                <div class="flex items-center space-x-2.5">
+                    <a href="<?= url('requisicoes/nova') ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-sm shadow-indigo-600/30 whitespace-nowrap">
                         <i class="fas fa-plus text-xs"></i>
                         <span>Nova Requisição</span>
                     </a>
 
                     <!-- Perfil do Usuário -->
                     <div class="relative flex items-center pl-3 border-l border-slate-200">
-                        <div class="text-right mr-3 hidden sm:block">
-                            <div class="text-sm font-medium text-slate-800 leading-tight"><?= htmlspecialchars($currentUser['name'] ?? 'Usuário') ?></div>
-                            <div class="text-xs text-slate-500 capitalize"><?= htmlspecialchars($currentUser['role'] ?? 'solicitante') ?> &bull; <?= htmlspecialchars($currentUser['department'] ?? 'Geral') ?></div>
-                        </div>
-                        <div class="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-sm border border-slate-300">
-                            <?= strtoupper(substr($currentUser['name'] ?? 'U', 0, 1)) ?>
-                        </div>
-                        <a href="<?= url('logout') ?>" title="Sair do sistema" class="ml-3 text-slate-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-red-50">
+                        <a href="<?= url('perfil') ?>" title="Clique para editar seu perfil" class="flex items-center group transition">
+                            <div class="text-right mr-2.5 hidden sm:block">
+                                <div class="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-indigo-600 leading-tight transition"><?= htmlspecialchars($currentUser['name'] ?? 'Usuário') ?></div>
+                                <div class="text-[11px] text-slate-500 capitalize leading-tight"><?= htmlspecialchars($currentUser['role'] ?? 'solicitante') ?> &bull; <?= htmlspecialchars($currentUser['department'] ?? 'Geral') ?></div>
+                            </div>
+                            <?php if (!empty($currentUser['avatar']) && file_exists(__DIR__ . '/../../public/' . $currentUser['avatar'])): ?>
+                                <img src="<?= asset($currentUser['avatar']) ?>" alt="Avatar" class="w-9 h-9 rounded-full object-cover border-2 border-indigo-200 group-hover:border-indigo-500 transition shadow-sm">
+                            <?php else: ?>
+                                <div class="w-9 h-9 rounded-full bg-indigo-50 group-hover:bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200 transition">
+                                    <?= strtoupper(substr($currentUser['name'] ?? 'U', 0, 1)) ?>
+                                </div>
+                            <?php endif; ?>
+                        </a>
+                        <a href="<?= url('logout') ?>" title="Sair do sistema" class="ml-2.5 text-slate-400 hover:text-red-600 transition p-1.5 rounded-xl hover:bg-red-50">
                             <i class="fas fa-sign-out-alt text-base"></i>
                         </a>
                     </div>
@@ -103,12 +134,15 @@ $currentRoute = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         </div>
 
         <!-- Menu Mobile -->
-        <div class="md:hidden border-t border-slate-200 bg-white px-4 py-2 flex overflow-x-auto gap-2">
-            <a href="<?= url() ?>" class="px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap <?= (empty($_GET['route']) || $_GET['route'] === '/') ? 'bg-primary-50 text-primary-700' : 'text-slate-600' ?>">Painel</a>
-            <a href="<?= url('requisicoes') ?>" class="px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap <?= (isset($_GET['route']) && str_starts_with($_GET['route'], 'requisicoes')) ? 'bg-primary-50 text-primary-700' : 'text-slate-600' ?>">Requisições</a>
-            <a href="<?= url('fornecedores') ?>" class="px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap <?= (isset($_GET['route']) && str_starts_with($_GET['route'], 'fornecedores')) ? 'bg-primary-50 text-primary-700' : 'text-slate-600' ?>">Fornecedores</a>
-            <a href="<?= url('contratos') ?>" class="px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap <?= (isset($_GET['route']) && str_starts_with($_GET['route'], 'contratos')) ? 'bg-primary-50 text-primary-700' : 'text-slate-600' ?>">Contratos</a>
-            <a href="<?= url('relatorios') ?>" class="px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap <?= (isset($_GET['route']) && str_starts_with($_GET['route'], 'relatorios')) ? 'bg-primary-50 text-primary-700' : 'text-slate-600' ?>">Relatórios</a>
+        <div class="md:hidden border-t border-slate-200 bg-white px-3 py-2 flex overflow-x-auto gap-1.5 scrollbar-none">
+            <a href="<?= url() ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Painel</a>
+            <a href="<?= url('requisicoes') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('requisicoes') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Requisições</a>
+            <a href="<?= url('fornecedores') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('fornecedores') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Para Quem Solicitar</a>
+            <a href="<?= url('contratos') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('contratos') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Contratos</a>
+            <a href="<?= url('relatorios') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('relatorios') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Relatórios</a>
+            <?php if (\App\Helpers\Security::hasRole(['admin'])): ?>
+                <a href="<?= url('configuracoes') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('configuracoes') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Configurações</a>
+            <?php endif; ?>
         </div>
     </header>
 

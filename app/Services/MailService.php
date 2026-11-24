@@ -176,29 +176,35 @@ class MailService
             return;
         }
 
-        $companyName = $this->setting->get('company_name', 'Nossa Empresa');
+        $companyName = $this->setting->get('company_name', 'Minha Empresa') ?: 'Minha Empresa';
+        $reqColor = safe_hex_color($this->setting->get('req_primary_color', '#4f46e5'), '#4f46e5');
+        $isWebQr = $this->setting->get('is_web_hosted', '0') === '1' && $this->setting->get('enable_qrcode_link', '0') === '1';
+        $publicLink = ($isWebQr && !empty($requisition['view_token']))
+            ? url('requisicoes/publica?token=' . $requisition['view_token'])
+            : '';
+
         $subject = "Nova Requisição Pendente de Aprovação: {$requisition['code']} - {$requisition['title']}";
-        
+
+        $linkBtn = $publicLink
+            ? "<div style='margin-top:20px;'><a href='{$publicLink}' style='background:{$reqColor};color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:bold;display:inline-block;'>Visualizar Requisição Online &rarr;</a></div>"
+            : "";
+
         $body = "
         <div style='font-family:sans-serif;max-width:600px;margin:auto;padding:20px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;'>
-            <div style='border-bottom:2px solid #4f46e5;padding-bottom:12px;margin-bottom:15px;'>
+            <div style='border-bottom:2px solid {$reqColor};padding-bottom:12px;margin-bottom:15px;'>
                 <h2 style='color:#1e293b;margin:0;'>Nova Requisição Cadastrada</h2>
-                <p style='color:#64748b;font-size:13px;margin:3px 0 0;'>Empresa: <strong>{$companyName}</strong></p>
+                <p style='color:#64748b;font-size:13px;margin:3px 0 0;'>Empresa: <strong>" . htmlspecialchars($companyName) . "</strong></p>
             </div>
             <p style='font-size:14px;color:#334155;'>Uma nova requisição foi registrada e aguarda sua análise:</p>
             <ul style='font-size:13px;color:#334155;line-height:1.6;'>
-                <li><strong>Código:</strong> {$requisition['code']}</li>
-                <li><strong>Título:</strong> {$requisition['title']}</li>
+                <li><strong>Código:</strong> " . htmlspecialchars($requisition['code']) . "</li>
+                <li><strong>Título:</strong> " . htmlspecialchars($requisition['title']) . "</li>
                 <li><strong>Tipo:</strong> " . ($requisition['type'] === 'servico' ? 'Prestação de Serviço' : 'Compra de Material') . "</li>
-                <li><strong>Solicitante:</strong> {$requisition['requester_name']} ({$requisition['department']})</li>
-                <li><strong>Prioridade:</strong> " . strtoupper($requisition['priority']) . "</li>
+                <li><strong>Solicitante:</strong> " . htmlspecialchars($requisition['requester_name']) . " (" . htmlspecialchars($requisition['department']) . ")</li>
+                <li><strong>Prioridade:</strong> " . strtoupper(htmlspecialchars($requisition['priority'])) . "</li>
                 " . (!empty($requisition['has_values']) ? "<li><strong>Valor Total Estimado:</strong> " . formatMoney($requisition['total_amount']) . "</li>" : "") . "
             </ul>
-            <div style='margin-top:20px;'>
-                <a href='" . url('requisicoes/ver?id=' . $requisition['id']) . "' style='background:#4f46e5;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:bold;display:inline-block;'>
-                    Visualizar e Avaliar Requisição &rarr;
-                </a>
-            </div>
+            {$linkBtn}
         </div>";
 
         foreach ($approvers as $appr) {
@@ -232,22 +238,28 @@ class MailService
             'concluida'   => 'Concluída / Entregue 🏁',
         ];
 
-        $statusTitle = $statusTitles[$newStatus] ?? ucfirst($newStatus);
+        $statusTitle = $statusTitles[$newStatus] ?? statusLabel($newStatus);
         $subject = "Atualização de Status da Requisição {$requisition['code']}: {$statusTitle}";
+
+        $reqColor = safe_hex_color($this->setting->get('req_primary_color', '#4f46e5'), '#4f46e5');
+        $isWebQr = $this->setting->get('is_web_hosted', '0') === '1' && $this->setting->get('enable_qrcode_link', '0') === '1';
+        $publicLink = ($isWebQr && !empty($requisition['view_token']))
+            ? url('requisicoes/publica?token=' . $requisition['view_token'])
+            : '';
+
+        $linkBtn = $publicLink
+            ? "<div style='margin-top:20px;'><a href='{$publicLink}' style='background:{$reqColor};color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:bold;display:inline-block;'>Ver Requisição Online &rarr;</a></div>"
+            : "";
 
         $body = "
         <div style='font-family:sans-serif;max-width:600px;margin:auto;padding:20px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;'>
-            <div style='border-bottom:2px solid #4f46e5;padding-bottom:12px;margin-bottom:15px;'>
+            <div style='border-bottom:2px solid {$reqColor};padding-bottom:12px;margin-bottom:15px;'>
                 <h2 style='color:#1e293b;margin:0;'>Sua Requisição foi {$statusTitle}</h2>
-                <p style='color:#64748b;font-size:13px;margin:3px 0 0;'>Código: <strong>{$requisition['code']}</strong></p>
+                <p style='color:#64748b;font-size:13px;margin:3px 0 0;'>Código: <strong>" . htmlspecialchars($requisition['code']) . "</strong></p>
             </div>
-            <p style='font-size:14px;color:#334155;'>Olá <strong>{$requesterName}</strong>, o status da sua solicitação foi atualizado para: <strong style='color:#4f46e5;'>{$statusTitle}</strong>.</p>
-            " . ($reason ? "<p style='font-size:13px;background:#fef2f2;border:1px solid #fecaca;padding:10px;border-radius:8px;color:#991b1b;'><strong>Motivo / Observações:</strong> {$reason}</p>" : "") . "
-            <div style='margin-top:20px;'>
-                <a href='" . url('requisicoes/ver?id=' . $requisition['id']) . "' style='background:#4f46e5;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:bold;display:inline-block;'>
-                    Ver Detalhes da Requisição &rarr;
-                </a>
-            </div>
+            <p style='font-size:14px;color:#334155;'>Olá <strong>" . htmlspecialchars($requesterName) . "</strong>, o status da sua solicitação foi atualizado para: <strong style='color:{$reqColor};'>{$statusTitle}</strong>.</p>
+            " . ($reason ? "<p style='font-size:13px;background:#fef2f2;border:1px solid #fecaca;padding:10px;border-radius:8px;color:#991b1b;'><strong>Motivo / Observações:</strong> " . htmlspecialchars($reason) . "</p>" : "") . "
+            {$linkBtn}
         </div>";
 
         try {

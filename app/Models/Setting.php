@@ -61,6 +61,72 @@ class Setting extends Model
             if (!in_array('has_values', $columns, true)) {
                 $this->db->exec("ALTER TABLE `requisitions` ADD COLUMN `has_values` TINYINT(1) NOT NULL DEFAULT 1 AFTER `total_amount`;");
             }
+            if (!in_array('view_token', $columns, true)) {
+                $this->db->exec("ALTER TABLE `requisitions` ADD COLUMN `view_token` VARCHAR(128) NULL UNIQUE AFTER `code`;");
+            }
+
+            // 4. Verifica e adiciona colunas de avatar e 2FA TOTP na tabela `users`
+            $userColsStmt = $this->db->query("SHOW COLUMNS FROM `users`");
+            $userCols = $userColsStmt->fetchAll(PDO::FETCH_COLUMN);
+            if (!in_array('avatar', $userCols, true)) {
+                $this->db->exec("ALTER TABLE `users` ADD COLUMN `avatar` VARCHAR(255) NULL AFTER `phone`;");
+            }
+            if (!in_array('totp_secret', $userCols, true)) {
+                $this->db->exec("ALTER TABLE `users` ADD COLUMN `totp_secret` VARCHAR(128) NULL AFTER `avatar`;");
+            }
+            if (!in_array('totp_enabled', $userCols, true)) {
+                $this->db->exec("ALTER TABLE `users` ADD COLUMN `totp_enabled` TINYINT(1) NOT NULL DEFAULT 0 AFTER `totp_secret`;");
+            }
+            if (!in_array('totp_recovery_codes', $userCols, true)) {
+                $this->db->exec("ALTER TABLE `users` ADD COLUMN `totp_recovery_codes` TEXT NULL AFTER `totp_enabled`;");
+            }
+
+            // 4b. Tabela de controle contra força bruta
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `security_attempts` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `ip_address` VARCHAR(45) NOT NULL,
+                    `context` VARCHAR(50) NOT NULL,
+                    `identifier` VARCHAR(190) NULL,
+                    `attempts` INT UNSIGNED NOT NULL DEFAULT 1,
+                    `locked_until` DATETIME NULL,
+                    `last_attempt_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY `uniq_ip_ctx_id` (`ip_address`, `context`, `identifier`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            // 5. Remove chaves legadas/expostas caso existam de versões anteriores
+            $this->db->exec("DELETE FROM `settings` WHERE `key_name` = 'github_repo'");
+            $this->db->exec("UPDATE `settings` SET `value` = '' WHERE `key_name` = 'license_key' AND `value` != '' AND `value` NOT REGEXP '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'");
+
+            // 6. Configurações padrão limpas (White-label e travado até ativação oficial)
+            $defaults = [
+                'license_status'        => 'unlicensed',
+                'license_key'           => '',
+                'license_lock_mode'     => '1',
+                'license_proof'         => '',
+                'turnstile_enabled'     => '0',
+                'turnstile_site_key'    => '',
+                'turnstile_secret_key'  => '',
+                'is_web_hosted'         => '0',
+                'enable_qrcode_link'    => '0',
+                'block_search_bots'     => '0',
+                'theme_primary_color'   => '#4f46e5',
+                'theme_secondary_color' => '#4338ca',
+                'theme_accent_color'    => '#6366f1',
+                'req_primary_color'     => '#4338ca',
+                'req_bg_tint'           => '#eef2ff',
+                'req_border_color'      => '#cbd5e1',
+            ];
+
+            foreach ($defaults as $k => $v) {
+                $stmtCheck = $this->db->prepare("SELECT COUNT(*) FROM `settings` WHERE `key_name` = :k");
+                $stmtCheck->execute(['k' => $k]);
+                if ((int)$stmtCheck->fetchColumn() === 0) {
+                    $stmtIns = $this->db->prepare("INSERT INTO `settings` (`key_name`, `value`) VALUES (:k, :v)");
+                    $stmtIns->execute(['k' => $k, 'v' => $v]);
+                }
+            }
 
             self::$initialized = true;
         } catch (Exception $e) {

@@ -1,0 +1,19 @@
+# Bloqueia execução de scripts dentro da pasta de uploads (Segurança contra RCE)
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+<FilesMatch "\.(php|phtml|php\d|phar|cgi|pl|py|sh|bat|exe|jsp|asp|aspx)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+Options -Indexes -ExecCGI

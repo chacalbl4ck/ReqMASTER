@@ -82,14 +82,14 @@ Sistema corporativo desenvolvido em **PHP 8.5** com banco de dados **MySQL**, pr
 │   ├── .htaccess                      # Reescríta de URL no Apache
 │   └── index.php                      # Front Controller & Roteador
 ├── views/
-│   ├── auth/                          # Telas de login com atalhos de teste
+│   ├── auth/                          # Telas de login, 2FA e perfil do usuário
 │   ├── dashboard/                     # Painel de controle visual
-│   ├── requisitions/                  # Listagem, criação, exibição e impressão
+│   ├── requisitions/                  # Listagem, criação, edição, exibição e impressão
 │   ├── suppliers/                     # Cadastro e histórico de fornecedores
 │   ├── contracts/                     # Gestão e acompanhamento de saldo
 │   ├── reports/                       # Relatórios gerenciais
 │   └── layout/                        # Header, footer e modais
-├── database.sql                       # Esquema do banco e dados de teste (Seed)
+├── database.sql                       # Esquema relacional do banco (sem dados fictícios)
 ├── docker-compose.yml                 # Subida em 1 comando com Docker
 └── README.md                          # Este manual
 ```
@@ -98,21 +98,13 @@ Sistema corporativo desenvolvido em **PHP 8.5** com banco de dados **MySQL**, pr
 
 ## ⚡ Instalação & Setup Automatizado (Recomendado)
 
-O sistema conta com um **assistente visual de instalação** que cria o banco de dados MySQL sozinho, importa as tabelas e configura os acessos.
+O sistema conta com um **assistente visual de instalação** seguro:
 
-1. Inicie o seu servidor web e o MySQL (XAMPP, Laragon, WAMP ou PHP Built-in Server).
-2. Abra no navegador:
-   ```text
-   http://localhost:8000/install
-   ```
-   *(ou `http://localhost/SOFTWARE%20DE%20requisição/install/` se estiver usando XAMPP/Laragon)*.
-3. Preencha os dados de conexão do seu MySQL (Host, Usuário e Senha).
-4. O instalador irá:
-   - Criar o banco de dados automaticamente se ele ainda não existir.
-   - Criar todas as tabelas com integridade referencial e chaves estrangeiras.
-   - Inserir a carga de dados iniciais e configurar o Administrador.
-   - Salvar o arquivo `config/db_config.php`.
-5. 🚨 **IMPORTANTE (SEGURANÇA)**: Após a conclusão do setup, o assistente exibirá uma tela de alerta solicitando que você **APAGUE A PASTA `install`** (há um botão para exclusão automática ou você pode apagá-la no Explorador de Arquivos).
+1. Crie previamente um **usuário dedicado e senha forte** no MySQL com privilégios vinculados exclusivamente ao banco de dados do sistema.
+2. Inicie o seu servidor web e o MySQL.
+3. Acesse `/install` no navegador.
+4. Informe as credenciais do usuário MySQL criado, defina o administrador principal com senha forte e conclua a instalação.
+5. 🚨 **IMPORTANTE (SEGURANÇA)**: Após a conclusão do setup, **APAGUE A PASTA `install`** imediatamente (há um botão para exclusão automática na tela final).
 
 ---
 
@@ -153,16 +145,4 @@ Se tiver o Docker instalado, basta rodar:
 ```bash
 docker compose up -d
 ```
-O container configurará automaticamente o Apache com PHP, instalará a extensão PDO MySQL e importará a base de dados em `http://localhost:8080`.
-
----
-
-## 🔑 Usuários e Senhas de Teste
-
-O banco de dados de demonstração já vem com 3 usuários pré-configurados (com botões de preenchimento rápido na tela de login):
-
-| Perfil | E-mail | Senha | Descrição |
-|---|---|---|---|
-| **Administrador** | `admin@empresa.com` | `admin123` | Acesso total a todas as funções e exclusões |
-| **Aprovador** | `carlos.aprovador@empresa.com` | `admin123` | Permissão para aprovar e rejeitar requisições |
-| **Solicitante** | `mariana.solicitante@empresa.com` | `admin123` | Cria requisições e acompanha status |
+O container configurará automaticamente o Apache com PHP e extensão PDO MySQL em `http://localhost:8080`.

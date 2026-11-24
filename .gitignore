@@ -1,0 +1,24 @@
+# Gerador de Licenças em Java (não enviar ao GitHub)
+license-generator-java/
+*.class
+*.jar
+
+# Configurações sensíveis locais e instalador
+config/db_config.php
+config/vault/
+install/installed.lock
+
+# Arquivos enviados pelos usuários (logos, avatares, anexos, assinaturas)
+public/uploads/*
+!public/uploads/.htaccess
+!public/uploads/logos/.gitkeep
+!public/uploads/avatars/.gitkeep
+!public/uploads/attachments/.gitkeep
+!public/uploads/signatures/.gitkeep
+
+# Arquivos temporários e logs
+*.log
+*.tmp
+cookies.txt
+.DS_Store
+Thumbs.db

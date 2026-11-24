@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/../layout/header.php';
+
+$companyName = $companySettings['company_name'] ?? 'Nossa Empresa';
+$companyCnpj = $companySettings['company_cnpj'] ?? '';
+$companyLogo = $companySettings['company_logo'] ?? '';
+$logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($companyLogo, '/')) : '';
 ?>
 
 <div class="max-w-5xl mx-auto space-y-6">
@@ -11,12 +16,39 @@ require __DIR__ . '/../layout/header.php';
                 <i class="fas fa-arrow-left"></i> Voltar para a lista
             </a>
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Nova Requisição</h1>
-            <p class="text-xs sm:text-sm text-slate-500">Cadastre uma solicitação para compra de materiais ou prestação de serviços com ou sem contrato.</p>
+            <p class="text-xs sm:text-sm text-slate-500">Cadastre uma solicitação para compra de materiais ou prestação de serviços com fotos e assinatura digital.</p>
         </div>
     </div>
 
-    <form method="POST" action="<?= url('requisicoes/salvar') ?>" class="space-y-6">
+    <!-- Banner dos Dados da Empresa Solicitante e Usuário Logado -->
+    <div class="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div class="flex items-center gap-3">
+            <?php if (!empty($companyLogo) && file_exists($logoPhysical)): ?>
+                <div class="h-11 w-16 bg-white rounded-xl border border-indigo-100 flex items-center justify-center p-1 shadow-sm shrink-0">
+                    <img src="<?= asset($companyLogo) ?>" alt="Logo" class="max-h-full max-w-full object-contain">
+                </div>
+            <?php else: ?>
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-600/20 shrink-0">
+                    <i class="fas fa-building"></i>
+                </div>
+            <?php endif; ?>
+            <div>
+                <span class="text-[11px] font-semibold text-indigo-700 uppercase tracking-wider block">Empresa Solicitante (Institucional):</span>
+                <span class="font-extrabold text-slate-900 text-sm"><?= htmlspecialchars($companyName) ?></span>
+                <?php if (!empty($companyCnpj)): ?>
+                    <span class="text-xs text-slate-500 font-mono ml-1.5">(CNPJ: <?= \App\Helpers\Security::formatDocument($companyCnpj) ?>)</span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <div class="text-left sm:text-right text-xs text-slate-600 border-t sm:border-t-0 pt-2 sm:pt-0 border-indigo-100 w-full sm:w-auto">
+            <span class="text-slate-400 block text-[10px] uppercase">Requisitante Responsável:</span>
+            <strong><?= htmlspecialchars($currentUser['name']) ?></strong> &bull; <?= htmlspecialchars($currentUser['email']) ?>
+        </div>
+    </div>
+
+    <form method="POST" action="<?= url('requisicoes/salvar') ?>" enctype="multipart/form-data" id="reqForm" class="space-y-6">
         <?= csrf_field() ?>
+        <input type="hidden" name="requester_signature" id="requester_signature_input" value="">
 
         <!-- Bloco 1: Tipo e Identificação Principal -->
         <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-5">
@@ -126,7 +158,6 @@ require __DIR__ . '/../layout/header.php';
                         <?php endforeach; ?>
                     </select>
 
-                    <!-- Alerta de Saldo do Contrato -->
                     <div id="contract_info_box" class="mt-2 p-2.5 rounded-lg bg-indigo-50/70 border border-indigo-200 text-xs text-indigo-800 flex items-center justify-between <?= empty($selectedContractId) ? 'hidden' : '' ?>">
                         <span><i class="fas fa-file-contract mr-1"></i> Saldo Disponível no Contrato:</span>
                         <strong id="contract_balance_span" class="font-bold text-indigo-900">R$ 0,00</strong>
@@ -148,10 +179,12 @@ require __DIR__ . '/../layout/header.php';
                         <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">3</span>
                         Itens / Serviços Requisitados
                     </h2>
-                    <p class="text-xs text-slate-400">Adicione os materiais ou serviços necessários. O subtotal e total geral são calculados automaticamente.</p>
+                    <p class="text-xs text-slate-400">
+                        Adicione os itens. <em>Dica:</em> O preenchimento do valor unitário é <strong>opcional</strong>. Se você não preencher valores, os campos de preço e total não aparecerão na requisição.
+                    </p>
                 </div>
                 <button type="button" id="btn_add_item" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition">
-                    <i class="fas fa-plus"></i> Adicionar Item / Linha
+                    <i class="fas fa-plus"></i> Adicionar Linha
                 </button>
             </div>
 
@@ -162,7 +195,7 @@ require __DIR__ . '/../layout/header.php';
                             <th class="py-2.5 px-3">Descrição / Especificações</th>
                             <th class="py-2.5 px-3 w-28">Unidade</th>
                             <th class="py-2.5 px-3 w-28 text-right">Quantidade</th>
-                            <th class="py-2.5 px-3 w-36 text-right">Valor Unitário Estimado</th>
+                            <th class="py-2.5 px-3 w-36 text-right">Valor Unit. (Opcional)</th>
                             <th class="py-2.5 px-3 w-32 text-right">Subtotal</th>
                             <th class="py-2.5 px-2 w-12 text-center"></th>
                         </tr>
@@ -195,11 +228,11 @@ require __DIR__ . '/../layout/header.php';
                             <td class="py-3 px-3 w-36">
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs text-slate-400">R$</span>
-                                    <input type="number" step="0.01" min="0" value="0.00" name="item_price[]" required class="calc-price w-full text-sm text-right pl-7 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                    <input type="text" name="item_price[]" placeholder="0,00" class="calc-price w-full text-sm text-right pl-7 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                             </td>
                             <td class="py-3 px-3 w-32 text-right font-medium text-slate-800 row-subtotal">
-                                R$ 0,00
+                                -
                             </td>
                             <td class="py-3 px-2 w-12 text-center">
                                 <button type="button" class="btn-remove-item text-slate-400 hover:text-rose-600 transition p-1">
@@ -215,13 +248,13 @@ require __DIR__ . '/../layout/header.php';
             <div class="flex justify-end pt-3 border-t border-slate-100">
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-right min-w-[260px]">
                     <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Valor Total Estimado</span>
-                    <span id="grand_total_span" class="text-2xl font-black text-slate-900 block mt-0.5">R$ 0,00</span>
-                    <span class="text-[11px] text-slate-400">Soma de todos os itens cadastrados</span>
+                    <span id="grand_total_span" class="text-2xl font-black text-slate-900 block mt-0.5">Sem valor</span>
+                    <span class="text-[11px] text-slate-400">Se não preenchido, será emitido como cotação/avulso</span>
                 </div>
             </div>
         </div>
 
-        <!-- Bloco 4: Justificativa & Necessidade -->
+        <!-- Bloco 4: Justificativa -->
         <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
             <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
                 <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">4</span>
@@ -233,6 +266,82 @@ require __DIR__ . '/../layout/header.php';
                     Por que esta compra ou serviço é necessária? <span class="text-rose-500">*</span>
                 </label>
                 <textarea name="justification" required rows="4" class="w-full text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm" placeholder="Descreva os motivos, a finalidade, eventuais impactos na operação caso não seja atendido..."></textarea>
+            </div>
+        </div>
+
+        <!-- Bloco 5: Anexo de Fotos & Documentos -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">5</span>
+                Anexar Fotos & Documentos (Opcional)
+            </h2>
+            <p class="text-xs text-slate-400">Envie fotos dos itens a serem comprados, fotos do local da reforma, propostas, orçamentos ou laudos técnicos.</p>
+
+            <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-indigo-400 transition bg-slate-50/50">
+                <i class="fas fa-cloud-upload-alt text-3xl text-indigo-500 mb-2"></i>
+                <div class="text-sm font-semibold text-slate-700 mb-1">Selecione ou arraste fotos e arquivos aqui</div>
+                <p class="text-xs text-slate-400 mb-3">Imagens (PNG, JPG, JPEG, WEBP), PDF ou documentos do Office.</p>
+                <input type="file" name="attachments[]" id="fileAttachments" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" class="block mx-auto text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+                
+                <!-- Pré-visualização de fotos -->
+                <div id="photosPreviewGrid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-4 hidden"></div>
+            </div>
+        </div>
+
+        <!-- Bloco 6: Assinatura Digital do Solicitante -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">6</span>
+                    Assinatura Digital do Solicitante
+                </h2>
+            </div>
+            <p class="text-xs text-slate-400">Escolha a modalidade de assinatura desejada para autenticar formalmente sua requisição.</p>
+
+            <!-- Seletor de Tipo de Assinatura -->
+            <div class="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold gap-1 max-w-lg">
+                <button type="button" onclick="setRequesterSigMode('canvas')" id="btnReqModeCanvas" class="flex-1 py-2 rounded-lg bg-white text-indigo-700 shadow-sm transition">
+                    <i class="fas fa-pen-nib mr-1"></i> Desenho na Tela
+                </button>
+                <button type="button" onclick="setRequesterSigMode('cert')" id="btnReqModeCert" class="flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">
+                    <i class="fas fa-certificate mr-1 text-emerald-600"></i> Certificado Digital (Windows / Linux A1 & A3)
+                </button>
+            </div>
+
+            <!-- Modo 1: Canvas Manual -->
+            <div id="requesterCanvasContainer" class="space-y-2">
+                <div class="border-2 border-slate-300 rounded-2xl p-2 bg-slate-50 inline-block w-full max-w-lg">
+                    <div class="flex justify-between items-center text-[11px] text-slate-400 mb-1">
+                        <span>Desenhe sua assinatura no quadro:</span>
+                        <button type="button" onclick="clearRequesterSignature()" class="text-indigo-600 hover:underline">Limpar</button>
+                    </div>
+                    <canvas id="signatureCanvas" width="500" height="130" class="w-full h-32 bg-white rounded-xl border border-slate-200 cursor-crosshair touch-none"></canvas>
+                </div>
+            </div>
+
+            <!-- Modo 2: Integração Nativa com Certificados Instalados no Navegador (Windows / Linux) -->
+            <div id="requesterCertContainer" class="hidden border border-emerald-200 rounded-2xl p-4 bg-emerald-50/50 space-y-3 max-w-lg">
+                <div class="text-xs text-emerald-950 font-bold flex items-center gap-1.5">
+                    <i class="fas fa-shield-alt text-emerald-600"></i> Integração Direta com Certificados do Sistema (A1 ou Token A3)
+                </div>
+                <p class="text-[11px] text-slate-600 leading-relaxed">
+                    O navegador abrirá a lista oficial de certificados digitais instalados no seu <strong>Windows</strong> ou <strong>Linux</strong> (incluindo Tokens/Smartcards A3 com solicitação nativa de PIN). Não é necessário enviar arquivos <code>.pfx</code>.
+                </p>
+                <button type="button" onclick="openBrowserCertSigner('requester')" id="btnValidateReqCert" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fas fa-id-card"></i> Selecionar Certificado Instalado no Sistema (A1 / A3)
+                </button>
+            </div>
+
+            <!-- Feedback e Prévia do Selo Digital Gerado -->
+            <div id="requesterSealFeedback" class="hidden p-3 rounded-xl border border-emerald-300 bg-emerald-50 text-xs text-emerald-900 space-y-2 max-w-lg">
+                <div class="font-bold flex items-center gap-1.5">
+                    <i class="fas fa-check-circle text-emerald-600"></i> <span id="requesterSealTitle">Certificado Digital Autenticado com Sucesso!</span>
+                </div>
+                <div id="requesterSealPreview" class="bg-white p-2 rounded-lg border border-emerald-200 flex justify-center"></div>
+            </div>
+
+            <div class="text-[11px] text-slate-400">
+                Responsável: <strong><?= htmlspecialchars($currentUser['name']) ?></strong> (<?= htmlspecialchars($currentUser['email']) ?>)
             </div>
         </div>
 
@@ -250,6 +359,170 @@ require __DIR__ . '/../layout/header.php';
 
 <script>
     window.BASE_URL = '<?= BASE_URL ?>';
+
+    // --------------------------------------------------------
+    // CANVAS DE ASSINATURA DIGITAL
+    // --------------------------------------------------------
+    const canvas = document.getElementById('signatureCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let hasSigned = false;
+
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    function getCanvasCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        }
+
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function startDraw(e) {
+        isDrawing = true;
+        const pos = getCanvasCoordinates(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        e.preventDefault();
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getCanvasCoordinates(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        hasSigned = true;
+        e.preventDefault();
+    }
+
+    function stopDraw() {
+        if (isDrawing) {
+            ctx.closePath();
+            isDrawing = false;
+        }
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDraw);
+
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    window.addEventListener('touchend', stopDraw);
+
+    let currentRequesterMode = 'canvas';
+
+    function setRequesterSigMode(mode) {
+        currentRequesterMode = mode;
+        const btnCanvas = document.getElementById('btnReqModeCanvas');
+        const btnCert = document.getElementById('btnReqModeCert');
+        const cCanvas = document.getElementById('requesterCanvasContainer');
+        const cCert = document.getElementById('requesterCertContainer');
+
+        btnCanvas.className = 'flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition';
+        btnCert.className = 'flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition';
+
+        cCanvas.classList.add('hidden');
+        cCert.classList.add('hidden');
+
+        if (mode === 'canvas') {
+            btnCanvas.className = 'flex-1 py-2 rounded-lg bg-white text-indigo-700 shadow-sm transition';
+            cCanvas.classList.remove('hidden');
+        } else {
+            btnCert.className = 'flex-1 py-2 rounded-lg bg-white text-emerald-700 shadow-sm transition';
+            cCert.classList.remove('hidden');
+        }
+    }
+
+    let pendingCertNonce = '';
+
+    function openBrowserCertSigner(ctxRole) {
+        pendingCertNonce = 'rm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+        const httpsBase = '<?= preg_replace('/^http:/i', 'https:', url('cert-auth/')) ?>';
+        const targetUrl = `${httpsBase}?ctx=${encodeURIComponent(ctxRole)}&nonce=${encodeURIComponent(pendingCertNonce)}&doc_title=${encodeURIComponent('Nova Requisição - Solicitante')}`;
+        const popup = window.open(targetUrl, 'rmCertPopup', 'width=520,height=560,menubar=no,toolbar=no,location=yes,status=no');
+        if (!popup) {
+            alert('Por favor, permita a abertura da janela pop-up para selecionar o certificado instalado no seu navegador.');
+        }
+    }
+
+    window.addEventListener('message', function(event) {
+        if (!event.data || event.data.type !== 'RM_CERT_SIGNED') return;
+        if (event.data.ctx !== 'requester') return;
+        const data = event.data.result;
+        if (data && data.success) {
+            document.getElementById('requester_signature_input').value = data.seal_image;
+            hasSigned = true;
+            document.getElementById('requesterSealTitle').textContent = `Certificado Autenticado: ${data.signer_name}`;
+            document.getElementById('requesterSealPreview').innerHTML = `<img src="${data.seal_image}" class="max-h-24">`;
+            document.getElementById('requesterSealFeedback').classList.remove('hidden');
+        }
+    });
+
+    function clearRequesterSignature() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasSigned = false;
+        document.getElementById('requester_signature_input').value = '';
+        document.getElementById('requesterSealFeedback').classList.add('hidden');
+    }
+
+    document.getElementById('reqForm').addEventListener('submit', function() {
+        if (currentRequesterMode === 'canvas' && hasSigned) {
+            document.getElementById('requester_signature_input').value = canvas.toDataURL('image/png');
+        }
+    });
+
+    // --------------------------------------------------------
+    // PRÉ-VISUALIZAÇÃO DE FOTOS ANEXADAS
+    // --------------------------------------------------------
+    const fileInput = document.getElementById('fileAttachments');
+    const previewGrid = document.getElementById('photosPreviewGrid');
+
+    fileInput.addEventListener('change', function() {
+        previewGrid.innerHTML = '';
+        if (this.files && this.files.length > 0) {
+            previewGrid.classList.remove('hidden');
+            Array.from(this.files).forEach(file => {
+                const col = document.createElement('div');
+                col.className = 'relative rounded-xl overflow-hidden border border-slate-200 bg-white p-1 text-center';
+
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        col.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-20 object-cover rounded-lg">
+                            <span class="text-[10px] text-slate-500 block truncate mt-1">${file.name}</span>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    col.innerHTML = `
+                        <div class="h-20 flex items-center justify-center bg-slate-50 text-slate-400">
+                            <i class="fas fa-file-pdf text-2xl text-rose-500"></i>
+                        </div>
+                        <span class="text-[10px] text-slate-500 block truncate mt-1">${file.name}</span>
+                    `;
+                }
+                previewGrid.appendChild(col);
+            });
+        } else {
+            previewGrid.classList.add('hidden');
+        }
+    });
 </script>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>
