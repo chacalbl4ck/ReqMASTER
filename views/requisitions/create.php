@@ -511,6 +511,26 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
     }
 
     let pendingCertNonce = '';
+    let certPollTimer = null;
+
+    function applyRequesterCertResult(data) {
+        if (!data || !data.success) return;
+        if (certPollTimer) {
+            clearInterval(certPollTimer);
+            certPollTimer = null;
+        }
+        document.getElementById('requester_signature_input').value = data.seal_image;
+        hasSigned = true;
+        document.getElementById('requesterSealTitle').textContent = `Certificado Autenticado: ${data.signer_name}`;
+        const preview = document.getElementById('requesterSealPreview');
+        preview.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = data.seal_image;
+        img.alt = 'Selo Digital';
+        img.className = 'max-h-24';
+        preview.appendChild(img);
+        document.getElementById('requesterSealFeedback').classList.remove('hidden');
+    }
 
     function openBrowserCertSigner(ctxRole) {
         pendingCertNonce = 'rm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
@@ -519,20 +539,34 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
         const popup = window.open(targetUrl, 'rmCertPopup', 'width=520,height=560,menubar=no,toolbar=no,location=yes,status=no');
         if (!popup) {
             alert('Por favor, permita a abertura da janela pop-up para selecionar o certificado instalado no seu navegador.');
+            return;
         }
+        if (certPollTimer) clearInterval(certPollTimer);
+        certPollTimer = setInterval(() => {
+            if (!pendingCertNonce) return;
+            fetch(`<?= url('requisicoes/assinar-certificado') ?>?nonce=${encodeURIComponent(pendingCertNonce)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.success) {
+                        applyRequesterCertResult(data);
+                    } else if (popup.closed) {
+                        clearInterval(certPollTimer);
+                        certPollTimer = null;
+                    }
+                })
+                .catch(() => {
+                    if (popup.closed) {
+                        clearInterval(certPollTimer);
+                        certPollTimer = null;
+                    }
+                });
+        }, 1200);
     }
 
     window.addEventListener('message', function(event) {
         if (!event.data || event.data.type !== 'RM_CERT_SIGNED') return;
         if (event.data.ctx !== 'requester') return;
-        const data = event.data.result;
-        if (data && data.success) {
-            document.getElementById('requester_signature_input').value = data.seal_image;
-            hasSigned = true;
-            document.getElementById('requesterSealTitle').textContent = `Certificado Autenticado: ${data.signer_name}`;
-            document.getElementById('requesterSealPreview').innerHTML = `<img src="${data.seal_image}" class="max-h-24">`;
-            document.getElementById('requesterSealFeedback').classList.remove('hidden');
-        }
+        applyRequesterCertResult(event.data.result);
     });
 
     function clearRequesterSignature() {

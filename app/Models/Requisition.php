@@ -313,7 +313,7 @@ class Requisition extends Model
 
             // Registra Assinatura Digital do Solicitante na Trilha de Auditoria
             if (!empty($data['requester_signature'])) {
-                $isCert = str_contains($data['requester_signature'], 'CERTIFICADO DIGITAL');
+                $isCert = is_certificate_signature($data['requester_signature']);
                 $sigMethod = $isCert ? 'Certificado Digital ICP-Brasil' : 'Assinatura Digital (Canvas)';
                 $log->log('Assinatura Digital - Solicitante', "Requisição assinada digitalmente pelo solicitante ({$sigMethod}) em " . date('d/m/Y \à\s H:i:s') . ".", $requisitionId, $contractId, (int)$data['user_id']);
             }
@@ -400,7 +400,7 @@ class Requisition extends Model
 
             // Registra Assinatura Digital do Aprovador na Trilha de Auditoria
             if ($newStatus === 'aprovada' && !empty($approverSignature)) {
-                $isCert = str_contains($approverSignature, 'CERTIFICADO DIGITAL');
+                $isCert = is_certificate_signature($approverSignature);
                 $sigMethod = $isCert ? 'Certificado Digital ICP-Brasil' : 'Assinatura Digital (Canvas)';
                 $log->log('Assinatura Digital - Aprovador', "Requisição aprovada e assinada digitalmente pelo gestor/aprovador ({$sigMethod}) em " . date('d/m/Y \à\s H:i:s') . ".", $id, !empty($req['contract_id']) ? (int)$req['contract_id'] : null, $userId);
             }

@@ -289,3 +289,32 @@ function priorityBadge(string $priority): string
         default => '<span class="text-xs text-gray-500">' . htmlspecialchars(ucfirst($priority)) . '</span>',
     };
 }
+
+function signature_image_src(?string $sig): string
+{
+    $sig = trim((string)$sig);
+    if ($sig === '') {
+        return '';
+    }
+    $prefix = 'data:image/svg+xml;base64,';
+    if (str_starts_with($sig, $prefix)) {
+        $raw = base64_decode(substr($sig, strlen($prefix)), true);
+        if ($raw !== false && (str_contains($raw, '&bull;') || str_contains($raw, '&#039;'))) {
+            $raw = str_replace(['&bull;', '&#039;'], ['&#8226;', '&apos;'], $raw);
+            return $prefix . base64_encode($raw);
+        }
+    }
+    return $sig;
+}
+
+function is_certificate_signature(?string $sig): bool
+{
+    $sig = trim((string)$sig);
+    if ($sig === '') {
+        return false;
+    }
+    if (str_starts_with($sig, 'data:image/svg+xml') || str_contains($sig, 'CERTIFICADO')) {
+        return true;
+    }
+    return false;
+}

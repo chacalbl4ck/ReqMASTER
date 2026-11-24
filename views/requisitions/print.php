@@ -396,7 +396,7 @@ $qrCodeUrl = $qrCodeUrl ?? null;
             <div class="sig-block">
                 <div class="sig-img-box">
                     <?php if (!empty($requisition['requester_signature'])): ?>
-                        <img src="<?= $requisition['requester_signature'] ?>" alt="Assinatura" class="sig-img">
+                        <img src="<?= htmlspecialchars(signature_image_src($requisition['requester_signature'])) ?>" alt="Assinatura" class="sig-img">
                     <?php endif; ?>
                 </div>
                 <div class="sig-line"><?= htmlspecialchars($requisition['requester_name']) ?></div>
@@ -410,7 +410,7 @@ $qrCodeUrl = $qrCodeUrl ?? null;
                 <div class="sig-block">
                     <div class="sig-img-box">
                         <?php if (!empty($requisition['approver_signature'])): ?>
-                            <img src="<?= $requisition['approver_signature'] ?>" alt="Assinatura" class="sig-img">
+                            <img src="<?= htmlspecialchars(signature_image_src($requisition['approver_signature'])) ?>" alt="Assinatura" class="sig-img">
                         <?php endif; ?>
                     </div>
                     <div class="sig-line"><?= htmlspecialchars($requisition['approver_name'] ?? 'Gestor de Compras / Diretoria') ?></div>

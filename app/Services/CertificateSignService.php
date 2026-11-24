@@ -128,15 +128,17 @@ class CertificateSignService
 
     private function generateVisualSeal(array $d): string
     {
-        $nameEsc     = htmlspecialchars($d['name']);
-        $docEsc      = htmlspecialchars($d['doc']);
-        $issuerEsc   = htmlspecialchars(mb_strimwidth($d['issuer'], 0, 52, '...'));
-        $dateTimeEsc = htmlspecialchars($d['date_time']);
-        $hashEsc     = htmlspecialchars($d['hash_short']);
-        $titleEsc    = htmlspecialchars($d['title']);
-        $color       = $d['color'];
+        $xmlFlags    = ENT_XML1 | ENT_QUOTES;
+        $nameEsc     = htmlspecialchars($d['name'], $xmlFlags, 'UTF-8');
+        $docEsc      = htmlspecialchars($d['doc'], $xmlFlags, 'UTF-8');
+        $issuerEsc   = htmlspecialchars(mb_strimwidth($d['issuer'], 0, 52, '...'), $xmlFlags, 'UTF-8');
+        $dateTimeEsc = htmlspecialchars($d['date_time'], $xmlFlags, 'UTF-8');
+        $hashEsc     = htmlspecialchars($d['hash_short'], $xmlFlags, 'UTF-8');
+        $titleEsc    = htmlspecialchars($d['title'], $xmlFlags, 'UTF-8');
+        $color       = htmlspecialchars($d['color'], $xmlFlags, 'UTF-8');
 
         $svg = <<<SVG
+<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="480" height="150" viewBox="0 0 480 150">
     <rect x="2" y="2" width="476" height="146" rx="10" fill="#ffffff" stroke="{$color}" stroke-width="2.5"/>
     <rect x="2" y="2" width="12" height="146" rx="0" fill="{$color}"/>
@@ -168,7 +170,7 @@ class CertificateSignService
 
     <line x1="86" y1="116" x2="460" y2="116" stroke="#e2e8f0" stroke-width="1"/>
     <text x="86" y="132" font-family="Courier, monospace" font-size="8.5" fill="#64748b">
-        Hash SHA-256: {$hashEsc} &bull; Certificado A1/A3 Navegador
+        Hash SHA-256: {$hashEsc} &#8226; Certificado A1/A3 Navegador
     </text>
 </svg>
 SVG;

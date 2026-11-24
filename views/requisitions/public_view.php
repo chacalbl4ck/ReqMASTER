@@ -125,7 +125,7 @@ $reqBorder = safe_hex_color($companySettings['req_border_color'] ?? '#cbd5e1', '
                     <div class="text-[11px] font-bold uppercase text-slate-500">Assinatura do Solicitante <?= $isAdminRequester ? '(Admin)' : '' ?></div>
                     <div class="h-24 flex items-center justify-center">
                         <?php if (!empty($requisition['requester_signature'])): ?>
-                            <img src="<?= htmlspecialchars($requisition['requester_signature']) ?>" alt="Assinatura Solicitante" class="max-h-24 mx-auto object-contain">
+                            <img src="<?= htmlspecialchars(signature_image_src($requisition['requester_signature'])) ?>" alt="Assinatura Solicitante" class="max-h-24 mx-auto object-contain">
                         <?php else: ?>
                             <div class="text-xs text-slate-400 italic">Sem assinatura digital registrada</div>
                         <?php endif; ?>
@@ -138,7 +138,7 @@ $reqBorder = safe_hex_color($companySettings['req_border_color'] ?? '#cbd5e1', '
                         <div class="text-[11px] font-bold uppercase text-slate-500">Assinatura / Aprovação do Gestor</div>
                         <div class="h-24 flex items-center justify-center">
                             <?php if (!empty($requisition['approver_signature'])): ?>
-                                <img src="<?= htmlspecialchars($requisition['approver_signature']) ?>" alt="Assinatura Aprovador" class="max-h-24 mx-auto object-contain">
+                                <img src="<?= htmlspecialchars(signature_image_src($requisition['approver_signature'])) ?>" alt="Assinatura Aprovador" class="max-h-24 mx-auto object-contain">
                             <?php else: ?>
                                 <div class="text-xs text-slate-400 italic"><?= $requisition['status'] === 'pendente' ? 'Aguardando aprovação' : 'Sem assinatura digital' ?></div>
                             <?php endif; ?>

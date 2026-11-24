@@ -368,7 +368,7 @@ $attachments = $requisition['attachments'] ?? [];
                             </div>
                             <div class="mt-3 p-2 bg-white rounded-lg border border-slate-200 h-24 flex items-center justify-center">
                                 <?php if (!empty($requisition['requester_signature'])): ?>
-                                    <img src="<?= $requisition['requester_signature'] ?>" alt="Assinatura do Solicitante" class="max-h-full max-w-full object-contain">
+                                    <img src="<?= htmlspecialchars(signature_image_src($requisition['requester_signature'])) ?>" alt="Assinatura do Solicitante" class="max-h-full max-w-full object-contain">
                                 <?php else: ?>
                                     <span class="text-[11px] text-slate-400 italic">Autenticado eletronicamente por sessão</span>
                                 <?php endif; ?>
@@ -385,7 +385,7 @@ $attachments = $requisition['attachments'] ?? [];
                                 </div>
                                 <div class="mt-3 p-2 bg-white rounded-lg border border-slate-200 h-24 flex items-center justify-center">
                                     <?php if (!empty($requisition['approver_signature'])): ?>
-                                        <img src="<?= $requisition['approver_signature'] ?>" alt="Assinatura do Aprovador" class="max-h-full max-w-full object-contain">
+                                        <img src="<?= htmlspecialchars(signature_image_src($requisition['approver_signature'])) ?>" alt="Assinatura do Aprovador" class="max-h-full max-w-full object-contain">
                                     <?php elseif ($requisition['status'] === 'aprovada' || $requisition['status'] === 'em_execucao' || $requisition['status'] === 'concluida'): ?>
                                         <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
                                             <i class="fas fa-check-circle"></i> Aprovado digitalmente no sistema
@@ -419,10 +419,11 @@ $attachments = $requisition['attachments'] ?? [];
                                 <span>Assinatura do Solicitante <?= $isAdminRequester ? '(Admin)' : '' ?></span>
                             </div>
                             <?php if (!empty($requisition['requester_signature'])): ?>
+                                <?php $reqIsCert = is_certificate_signature($requisition['requester_signature']); ?>
                                 <p class="text-[11px] text-emerald-800">Assinado por: <strong><?= htmlspecialchars($requisition['requester_name']) ?></strong></p>
                                 <p class="text-[10px] text-emerald-700">Registrado em: <?= formatDateTime($requisition['created_at']) ?></p>
-                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold <?= str_contains($requisition['requester_signature'], 'CERTIFICADO') ? 'bg-emerald-200/70 text-emerald-900' : 'bg-slate-200/70 text-slate-700' ?>">
-                                    <?= str_contains($requisition['requester_signature'], 'CERTIFICADO') ? 'Certificado ICP-Brasil' : 'Assinatura Digital (Canvas)' ?>
+                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold <?= $reqIsCert ? 'bg-emerald-200/70 text-emerald-900' : 'bg-slate-200/70 text-slate-700' ?>">
+                                    <?= $reqIsCert ? 'Certificado ICP-Brasil' : 'Assinatura Digital (Canvas)' ?>
                                 </span>
                             <?php else: ?>
                                 <p class="text-[11px] text-slate-400">Pendente de assinatura.</p>
@@ -437,10 +438,11 @@ $attachments = $requisition['attachments'] ?? [];
                                     <span>Assinatura do Aprovador</span>
                                 </div>
                                 <?php if (!empty($requisition['approver_signature'])): ?>
+                                    <?php $appIsCert = is_certificate_signature($requisition['approver_signature']); ?>
                                     <p class="text-[11px] text-emerald-800">Aprovado e assinado por: <strong><?= htmlspecialchars($requisition['approver_name'] ?? 'Gestor') ?></strong></p>
                                     <p class="text-[10px] text-emerald-700">Registrado em: <?= formatDateTime($requisition['approved_at']) ?></p>
-                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold <?= str_contains($requisition['approver_signature'], 'CERTIFICADO') ? 'bg-emerald-200/70 text-emerald-900' : 'bg-slate-200/70 text-slate-700' ?>">
-                                        <?= str_contains($requisition['approver_signature'], 'CERTIFICADO') ? 'Certificado ICP-Brasil' : 'Assinatura Digital (Canvas)' ?>
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold <?= $appIsCert ? 'bg-emerald-200/70 text-emerald-900' : 'bg-slate-200/70 text-slate-700' ?>">
+                                        <?= $appIsCert ? 'Certificado ICP-Brasil' : 'Assinatura Digital (Canvas)' ?>
                                     </span>
                                 <?php else: ?>
                                     <p class="text-[11px] text-slate-400">Aguardando aprovação formal.</p>
@@ -873,6 +875,27 @@ $attachments = $requisition['attachments'] ?? [];
         }
     }
 
+    let appCertPollTimer = null;
+
+    function applyApproverCertResult(data) {
+        if (!data || !data.success) return;
+        if (appCertPollTimer) {
+            clearInterval(appCertPollTimer);
+            appCertPollTimer = null;
+        }
+        document.getElementById('approverSignatureInput').value = data.seal_image;
+        approverSigned = true;
+        document.getElementById('approverSealTitle').textContent = `Certificado Autenticado: ${data.signer_name}`;
+        const preview = document.getElementById('approverSealPreview');
+        preview.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = data.seal_image;
+        img.alt = 'Selo Digital';
+        img.className = 'max-h-24';
+        preview.appendChild(img);
+        document.getElementById('approverSealFeedback').classList.remove('hidden');
+    }
+
     function openApproverCertSigner() {
         const nonce = 'rm_app_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
         const httpsBase = <?= json_encode(cert_auth_url($companySettings ?? [])) ?>;
@@ -881,20 +904,33 @@ $attachments = $requisition['attachments'] ?? [];
         const popup = window.open(targetUrl, 'rmCertPopup', 'width=520,height=560,menubar=no,toolbar=no,location=yes,status=no');
         if (!popup) {
             alert('Por favor, permita a abertura da janela pop-up para selecionar o certificado instalado no navegador.');
+            return;
         }
+        if (appCertPollTimer) clearInterval(appCertPollTimer);
+        appCertPollTimer = setInterval(() => {
+            fetch(`<?= url('requisicoes/assinar-certificado') ?>?nonce=${encodeURIComponent(nonce)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.success) {
+                        applyApproverCertResult(data);
+                    } else if (popup.closed) {
+                        clearInterval(appCertPollTimer);
+                        appCertPollTimer = null;
+                    }
+                })
+                .catch(() => {
+                    if (popup.closed) {
+                        clearInterval(appCertPollTimer);
+                        appCertPollTimer = null;
+                    }
+                });
+        }, 1200);
     }
 
     window.addEventListener('message', function(event) {
         if (!event.data || event.data.type !== 'RM_CERT_SIGNED') return;
         if (event.data.ctx !== 'approver') return;
-        const data = event.data.result;
-        if (data && data.success) {
-            document.getElementById('approverSignatureInput').value = data.seal_image;
-            approverSigned = true;
-            document.getElementById('approverSealTitle').textContent = `Certificado Autenticado: ${data.signer_name}`;
-            document.getElementById('approverSealPreview').innerHTML = `<img src="${data.seal_image}" class="max-h-24">`;
-            document.getElementById('approverSealFeedback').classList.remove('hidden');
-        }
+        applyApproverCertResult(event.data.result);
     });
 
     function copyPublicQrLink() {
