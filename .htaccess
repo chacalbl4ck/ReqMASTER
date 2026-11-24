@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Permite acesso direto à pasta install se ela existir
+    RewriteCond %{REQUEST_URI} ^/install [NC,OR]
+    RewriteCond %{REQUEST_URI} install/ [NC]
+    RewriteRule ^install/(.*)$ install/$1 [L]
+
+    # Redireciona demais requisições para a pasta public
+    RewriteRule ^$ public/ [L]
+    RewriteRule (.*) public/$1 [L]
+</IfModule>

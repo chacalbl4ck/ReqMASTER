@@ -1,0 +1,38 @@
+services:
+  app:
+    image: php:8.4-apache
+    container_name: reqmaster_app
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=sistema_requisicoes
+      - DB_USER=root
+      - DB_PASS=root
+    depends_on:
+      - db
+    command: >
+      bash -c "
+      docker-php-ext-install pdo pdo_mysql &&
+      a2enmod rewrite &&
+      sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf &&
+      apache2-foreground"
+
+  db:
+    image: mysql:8.0
+    container_name: reqmaster_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sistema_requisicoes
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  db_data:
