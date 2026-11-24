@@ -676,42 +676,32 @@ $isSystemLocked = ($settings['license_lock_mode'] ?? '0') === '1';
                     </span>
                 </div>
 
-                <!-- Resumo criptografado da instância -->
+                <!-- Resumo criptografado da instância e verificação NTP -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
                         <span class="text-slate-400 block uppercase font-semibold text-[10px]">ID da Instância</span>
                         <span class="font-mono font-bold text-slate-800"><?= htmlspecialchars($licenseSummary['fingerprint'] ?? '-') ?></span>
                     </div>
                     <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                        <span class="text-slate-400 block uppercase font-semibold text-[10px]">Última Validação Online</span>
-                        <span class="font-semibold text-slate-800"><?= htmlspecialchars($licenseSummary['last_check'] ?? '-') ?></span>
+                        <span class="text-slate-400 block uppercase font-semibold text-[10px]">Validade da Licença</span>
+                        <span class="font-bold text-emerald-700"><?= htmlspecialchars($licenseSummary['expires_at'] ?? 'Não definida') ?></span>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                        <span class="text-slate-400 block uppercase font-semibold text-[10px]">Localidade do CNPJ / Fuso</span>
+                        <span class="font-semibold text-slate-800"><?= htmlspecialchars($licenseSummary['cnpj_location'] ?? '-') ?> (<?= htmlspecialchars($licenseSummary['cnpj_timezone'] ?? '-') ?>)</span>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                        <span class="text-slate-400 block uppercase font-semibold text-[10px]">Última Hora Oficial (NTP)</span>
+                        <span class="font-semibold text-slate-800"><?= htmlspecialchars($licenseSummary['ntp_local_datetime'] ?? '-') ?></span>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                        <span class="text-slate-400 block uppercase font-semibold text-[10px]">Servidor NTP Utilizado</span>
+                        <span class="font-mono text-slate-700"><?= htmlspecialchars($licenseSummary['ntp_server'] ?? '-') ?></span>
                     </div>
                     <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
                         <span class="text-slate-400 block uppercase font-semibold text-[10px]">Próxima Revalidação</span>
                         <span class="font-semibold text-indigo-700"><?= (int)($licenseSummary['next_check_in'] ?? 0) ?> seg (ciclo 5 min)</span>
                     </div>
-                </div>
-
-                <!-- Box de Trava/Destrava -->
-                <div class="p-5 rounded-2xl <?= $isSystemLocked ? 'bg-amber-50/80 border border-amber-200' : 'bg-slate-50 border border-slate-200' ?> flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800">
-                            <?= $isSystemLocked ? 'O sistema está travado para usuários' : 'Trava Operacional do Sistema' ?>
-                        </h3>
-                        <p class="text-xs text-slate-500 max-w-xl">
-                            <?= $isSystemLocked
-                                ? 'Para desbloquear, informe uma chave válida abaixo ou clique em revalidar licença.'
-                                : 'Você pode travar o sistema manualmente caso deseje suspender o acesso até nova validação.' ?>
-                        </p>
-                    </div>
-
-                    <form method="POST" action="<?= url('licenciamento/travar') ?>">
-                        <?= csrf_field() ?>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm transition whitespace-nowrap <?= $isSystemLocked ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700' ?>">
-                            <i class="fas <?= $isSystemLocked ? 'fa-sync-alt' : 'fa-lock' ?> mr-1.5"></i>
-                            <?= $isSystemLocked ? 'Revalidar & Destravar' : 'Travar Sistema' ?>
-                        </button>
-                    </form>
                 </div>
 
                 <!-- Formulário de Chave de Licença -->

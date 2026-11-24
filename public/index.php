@@ -140,10 +140,9 @@ match ($route) {
     'perfil/2fa/ativar' => (new AuthController())->enableTotp(),
     'perfil/2fa/desativar' => (new AuthController())->disableTotp(),
 
-    // Licenciamento & Trava do Sistema
+    // Licenciamento do Sistema
     'licenciamento' => (new LicenseController())->index(),
     'licenciamento/ativar' => (new LicenseController())->activate(),
-    'licenciamento/travar' => (new LicenseController())->toggleLock(),
 
     // Instalador Automatizado
     'install' => (function() {
