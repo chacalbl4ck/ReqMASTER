@@ -175,30 +175,47 @@ $qrCodeUrl = $qrCodeUrl ?? null;
             white-space: nowrap;
         }
         .signatures {
-            margin-top: 30px;
+            margin-top: 28px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 20px;
+            align-items: start;
             page-break-inside: avoid;
+        }
+        .signatures.signatures-2 {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 36px;
         }
         .sig-block {
             text-align: center;
             font-size: 8pt;
             display: flex;
-            flex-col;
-            justify-content: flex-end;
-            min-height: 85px;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .sig-img-box {
+            height: 60px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 6px;
         }
         .sig-img {
-            max-height: 45px;
-            max-width: 160px;
-            margin: 0 auto 4px auto;
+            max-height: 56px;
+            max-width: 180px;
+            object-fit: contain;
             display: block;
         }
         .sig-line {
             border-top: 1px solid #475569;
-            padding-top: 4px;
+            padding-top: 5px;
             font-weight: bold;
+            color: #0f172a;
+        }
+        .sig-sub {
+            font-size: 7.5pt;
+            color: #64748b;
+            margin-top: 2px;
         }
         @media print {
             .no-print { display: none !important; }
@@ -358,37 +375,41 @@ $qrCodeUrl = $qrCodeUrl ?? null;
         <?php endif; ?>
 
         <!-- 6. Assinaturas Digitais / Físicas -->
-        <div class="signatures">
+        <?php $isAdminRequester = (($requisition['requester_role'] ?? '') === 'admin'); ?>
+        <div class="signatures <?= $isAdminRequester ? 'signatures-2' : '' ?>">
             <!-- Solicitante -->
             <div class="sig-block">
-                <div>
+                <div class="sig-img-box">
                     <?php if (!empty($requisition['requester_signature'])): ?>
                         <img src="<?= $requisition['requester_signature'] ?>" alt="Assinatura" class="sig-img">
                     <?php endif; ?>
-                    <div class="sig-line"><?= htmlspecialchars($requisition['requester_name']) ?></div>
-                    <div style="font-size:7.5pt;color:#64748b;">Solicitante (<?= htmlspecialchars($requisition['department']) ?>)</div>
+                </div>
+                <div class="sig-line"><?= htmlspecialchars($requisition['requester_name']) ?></div>
+                <div class="sig-sub">
+                    <?= $isAdminRequester ? 'Solicitante / Administrador' : 'Solicitante' ?> (<?= htmlspecialchars($requisition['department']) ?>)
                 </div>
             </div>
 
-            <!-- Aprovador -->
-            <div class="sig-block">
-                <div>
-                    <?php if (!empty($requisition['approver_signature'])): ?>
-                        <img src="<?= $requisition['approver_signature'] ?>" alt="Assinatura" class="sig-img">
-                    <?php endif; ?>
+            <?php if (!$isAdminRequester): ?>
+                <!-- Aprovador (apenas quando solicitante não é Admin) -->
+                <div class="sig-block">
+                    <div class="sig-img-box">
+                        <?php if (!empty($requisition['approver_signature'])): ?>
+                            <img src="<?= $requisition['approver_signature'] ?>" alt="Assinatura" class="sig-img">
+                        <?php endif; ?>
+                    </div>
                     <div class="sig-line"><?= htmlspecialchars($requisition['approver_name'] ?? 'Gestor de Compras / Diretoria') ?></div>
-                    <div style="font-size:7.5pt;color:#64748b;">
+                    <div class="sig-sub">
                         <?= !empty($requisition['approved_at']) ? 'Aprovado em ' . formatDate($requisition['approved_at']) : 'Aprovador Responsável' ?>
                     </div>
                 </div>
-            </div>
+            <?php endif; ?>
 
             <!-- Fornecedor -->
             <div class="sig-block">
-                <div>
-                    <div class="sig-line" style="margin-top:40px;"><?= htmlspecialchars($requisition['supplier_name']) ?></div>
-                    <div style="font-size:7.5pt;color:#64748b;">Fornecedor / Prestador Contratado</div>
-                </div>
+                <div class="sig-img-box"></div>
+                <div class="sig-line"><?= htmlspecialchars($requisition['supplier_name']) ?></div>
+                <div class="sig-sub">Fornecedor / Prestador Contratado</div>
             </div>
         </div>
 

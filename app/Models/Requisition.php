@@ -109,6 +109,7 @@ class Requisition extends Model
             SELECT r.*,
                    u.name as requester_name,
                    u.email as requester_email,
+                   u.role as requester_role,
                    u.department as requester_dept,
                    u.phone as requester_phone,
                    s.name as supplier_name,

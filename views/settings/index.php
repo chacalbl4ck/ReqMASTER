@@ -649,6 +649,26 @@ $isSystemLocked = ($settings['license_lock_mode'] ?? '0') === '1';
                     </div>
                 </div>
 
+                <!-- Bloco D: Certificado Digital do Navegador (mTLS) -->
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <i class="fas fa-id-card text-emerald-600"></i> Certificado Digital no Navegador (mTLS VirtualHost)
+                    </div>
+                    <p class="text-[11px] text-slate-500">
+                        Para evitar bloqueios TLS 1.3 (Post-Handshake Authentication), o seletor de certificados A1/A3 utiliza um VirtualHost SSL dedicado na porta configurada abaixo (padrão <code>8443</code>).
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Porta mTLS (Apache)</label>
+                            <input type="text" name="mtls_port" value="<?= htmlspecialchars($settings['mtls_port'] ?? '8443') ?>" placeholder="8443" class="w-full text-xs rounded-xl font-mono">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">URL mTLS Personalizada (Opcional)</label>
+                            <input type="url" name="mtls_url" value="<?= htmlspecialchars($settings['mtls_url'] ?? '') ?>" placeholder="Ex: https://cert.seudominio.com/public/cert-auth/" class="w-full text-xs rounded-xl font-mono">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex justify-end pt-4 border-t border-slate-100">
                     <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-md transition">
                         <i class="fas fa-save mr-1.5"></i> Salvar Configurações de Segurança

@@ -64,10 +64,26 @@ $companyCnpj = $companySettings['company_cnpj'] ?? '';
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <!-- Departamento -->
+                <!-- Centro de Custo / Departamento -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Departamento / Setor <span class="text-rose-500">*</span></label>
-                    <input type="text" name="department" required value="<?= htmlspecialchars($requisition['department']) ?>" class="w-full text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Centro de Custo <span class="text-rose-500">*</span></label>
+                    <select name="department" required class="w-full text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                        <?php
+                            $currentDept = (string)($requisition['department'] ?? '');
+                            $foundInCc = false;
+                        ?>
+                        <?php foreach ($costCenters ?? [] as $cc): ?>
+                            <?php
+                                $ccLabel = $cc['code'] . ' - ' . $cc['name'];
+                                $sel = ($currentDept === $ccLabel || $currentDept === $cc['name']);
+                                if ($sel) $foundInCc = true;
+                            ?>
+                            <option value="<?= htmlspecialchars($ccLabel) ?>" <?= $sel ? 'selected' : '' ?>><?= htmlspecialchars($ccLabel) ?></option>
+                        <?php endforeach; ?>
+                        <?php if (!$foundInCc && $currentDept !== ''): ?>
+                            <option value="<?= htmlspecialchars($currentDept) ?>" selected><?= htmlspecialchars($currentDept) ?></option>
+                        <?php endif; ?>
+                    </select>
                 </div>
 
                 <!-- Prioridade -->

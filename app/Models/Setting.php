@@ -95,6 +95,19 @@ class Setting extends Model
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ");
 
+            // 4c. Tabela de Centros de Custo
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `cost_centers` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `code` VARCHAR(30) NOT NULL UNIQUE,
+                    `name` VARCHAR(120) NOT NULL,
+                    `description` VARCHAR(255) NULL,
+                    `active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
             // 5. Remove chaves legadas/expostas caso existam de versões anteriores
             $this->db->exec("DELETE FROM `settings` WHERE `key_name` = 'github_repo'");
             $this->db->exec("UPDATE `settings` SET `value` = '' WHERE `key_name` = 'license_key' AND `value` != '' AND `value` NOT REGEXP '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'");
@@ -111,6 +124,8 @@ class Setting extends Model
                 'is_web_hosted'         => '0',
                 'enable_qrcode_link'    => '0',
                 'block_search_bots'     => '0',
+                'mtls_port'             => '8443',
+                'mtls_url'              => '',
                 'theme_primary_color'   => '#4f46e5',
                 'theme_secondary_color' => '#4338ca',
                 'theme_accent_color'    => '#6366f1',

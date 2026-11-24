@@ -92,10 +92,24 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                        Departamento / Centro de Custo <span class="text-rose-500">*</span>
-                    </label>
-                    <input type="text" name="department" required value="<?= htmlspecialchars($currentUser['department'] ?? 'Geral') ?>" class="w-full text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                            Centro de Custo <span class="text-rose-500">*</span>
+                        </label>
+                        <button type="button" onclick="openQuickCostCenterModal()" class="text-[11px] font-bold text-indigo-600 hover:underline">
+                            + Novo Centro de Custo
+                        </button>
+                    </div>
+                    <select name="department" id="costCenterSelect" required class="w-full text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                        <option value="">-- Selecione o Centro de Custo --</option>
+                        <?php foreach ($costCenters ?? [] as $cc): ?>
+                            <?php $ccLabel = $cc['code'] . ' - ' . $cc['name']; ?>
+                            <option value="<?= htmlspecialchars($ccLabel) ?>"><?= htmlspecialchars($ccLabel) ?></option>
+                        <?php endforeach; ?>
+                        <?php if (!empty($currentUser['department']) && empty($costCenters)): ?>
+                            <option value="<?= htmlspecialchars($currentUser['department']) ?>" selected><?= htmlspecialchars($currentUser['department']) ?></option>
+                        <?php endif; ?>
+                    </select>
                 </div>
 
                 <div>
@@ -452,7 +466,7 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
 
     function openBrowserCertSigner(ctxRole) {
         pendingCertNonce = 'rm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
-        const httpsBase = '<?= preg_replace('/^http:/i', 'https:', url('cert-auth/')) ?>';
+        const httpsBase = <?= json_encode(cert_auth_url($companySettings ?? [])) ?>;
         const targetUrl = `${httpsBase}?ctx=${encodeURIComponent(ctxRole)}&nonce=${encodeURIComponent(pendingCertNonce)}&doc_title=${encodeURIComponent('Nova Requisição - Solicitante')}`;
         const popup = window.open(targetUrl, 'rmCertPopup', 'width=520,height=560,menubar=no,toolbar=no,location=yes,status=no');
         if (!popup) {
@@ -523,6 +537,94 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
             previewGrid.classList.add('hidden');
         }
     });
+
+    function openQuickCostCenterModal() {
+        document.getElementById('quickCcModal').classList.remove('hidden');
+    }
+
+    function closeQuickCostCenterModal() {
+        document.getElementById('quickCcModal').classList.add('hidden');
+    }
+
+    function saveQuickCostCenter() {
+        const code = document.getElementById('qCcCode').value.trim();
+        const name = document.getElementById('qCcName').value.trim();
+        const desc = document.getElementById('qCcDesc').value.trim();
+        const btn = document.getElementById('btnSaveQuickCc');
+
+        if (!code || !name) {
+            alert('Informe o Código e o Nome do Centro de Custo.');
+            return;
+        }
+
+        const fd = new FormData();
+        fd.append('csrf_token', '<?= csrf_token() ?>');
+        fd.append('ajax', '1');
+        fd.append('code', code);
+        fd.append('name', name);
+        fd.append('description', desc);
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+        fetch('<?= url('centros-de-custo/salvar') ?>', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: fd
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = 'Cadastrar e Selecionar';
+            if (data.success) {
+                const sel = document.getElementById('costCenterSelect');
+                const opt = document.createElement('option');
+                opt.value = data.label;
+                opt.textContent = data.label;
+                opt.selected = true;
+                sel.appendChild(opt);
+                document.getElementById('qCcCode').value = '';
+                document.getElementById('qCcName').value = '';
+                document.getElementById('qCcDesc').value = '';
+                closeQuickCostCenterModal();
+            } else {
+                alert(data.message || 'Erro ao cadastrar centro de custo.');
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = 'Cadastrar e Selecionar';
+            alert('Erro de comunicação ao cadastrar centro de custo.');
+        });
+    }
 </script>
+
+<!-- Modal Rápido de Novo Centro de Custo -->
+<div id="quickCcModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 border border-slate-100 space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-base text-slate-900">Cadastrar Novo Centro de Custo</h3>
+            <button type="button" onclick="closeQuickCostCenterModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-3">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Código <span class="text-rose-500">*</span></label>
+                <input type="text" id="qCcCode" maxlength="30" placeholder="Ex: CC-010" class="w-full text-sm rounded-xl font-mono uppercase">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nome <span class="text-rose-500">*</span></label>
+                <input type="text" id="qCcName" maxlength="120" placeholder="Ex: Manutenção Industrial" class="w-full text-sm rounded-xl">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Descrição</label>
+                <input type="text" id="qCcDesc" maxlength="255" placeholder="Opcional" class="w-full text-sm rounded-xl">
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <button type="button" onclick="closeQuickCostCenterModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+            <button type="button" onclick="saveQuickCostCenter()" id="btnSaveQuickCc" class="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md">Cadastrar e Selecionar</button>
+        </div>
+    </div>
+</div>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

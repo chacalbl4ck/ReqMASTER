@@ -67,6 +67,8 @@ use App\Controllers\ContractController;
 use App\Controllers\ReportController;
 use App\Controllers\SettingController;
 use App\Controllers\LicenseController;
+use App\Controllers\CostCenterController;
+use App\Controllers\LogController;
 
 // Cabeçalhos globais de segurança + verificação de bloqueio de indexação por bots
 $blockBots = false;
@@ -209,6 +211,16 @@ match ($route) {
     // Relatórios
     'relatorios' => (new ReportController())->index(),
     'relatorios/exportar-csv' => (new ReportController())->exportCsv(),
+
+    // Centros de Custo
+    'centros-de-custo' => (new CostCenterController())->index(),
+    'centros-de-custo/salvar' => (new CostCenterController())->store(),
+    'centros-de-custo/status' => (new CostCenterController())->toggleStatus(),
+    'centros-de-custo/excluir' => (new CostCenterController())->delete(),
+
+    // Logs do Sistema (Administrador)
+    'logs' => (new LogController())->index(),
+    'logs/exportar-csv' => (new LogController())->exportCsv(),
 
     // 404
     default => (function() {

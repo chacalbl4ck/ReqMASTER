@@ -119,26 +119,33 @@ $reqBorder = safe_hex_color($companySettings['req_border_color'] ?? '#cbd5e1', '
             </div>
 
             <!-- Assinaturas Digitais -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div class="p-4 rounded-2xl border bg-slate-50 text-center space-y-2" style="border-color: <?= $reqBorder ?>;">
-                    <div class="text-[11px] font-bold uppercase text-slate-500">Assinatura do Solicitante</div>
-                    <?php if (!empty($requisition['requester_signature'])): ?>
-                        <img src="<?= htmlspecialchars($requisition['requester_signature']) ?>" alt="Assinatura Solicitante" class="max-h-24 mx-auto object-contain">
-                    <?php else: ?>
-                        <div class="text-xs text-slate-400 italic py-4">Sem assinatura digital registrada</div>
-                    <?php endif; ?>
+            <?php $isAdminRequester = (($requisition['requester_role'] ?? '') === 'admin'); ?>
+            <div class="grid grid-cols-1 <?= (!$isAdminRequester || !empty($requisition['approver_signature'])) ? 'sm:grid-cols-2' : '' ?> gap-4 pt-2 items-stretch">
+                <div class="p-4 rounded-2xl border bg-slate-50 text-center flex flex-col justify-between space-y-2" style="border-color: <?= $reqBorder ?>;">
+                    <div class="text-[11px] font-bold uppercase text-slate-500">Assinatura do Solicitante <?= $isAdminRequester ? '(Admin)' : '' ?></div>
+                    <div class="h-24 flex items-center justify-center">
+                        <?php if (!empty($requisition['requester_signature'])): ?>
+                            <img src="<?= htmlspecialchars($requisition['requester_signature']) ?>" alt="Assinatura Solicitante" class="max-h-24 mx-auto object-contain">
+                        <?php else: ?>
+                            <div class="text-xs text-slate-400 italic">Sem assinatura digital registrada</div>
+                        <?php endif; ?>
+                    </div>
                     <div class="text-xs font-semibold text-slate-700"><?= htmlspecialchars($requisition['requester_name']) ?></div>
                 </div>
 
-                <div class="p-4 rounded-2xl border bg-slate-50 text-center space-y-2" style="border-color: <?= $reqBorder ?>;">
-                    <div class="text-[11px] font-bold uppercase text-slate-500">Assinatura / Aprovação do Gestor</div>
-                    <?php if (!empty($requisition['approver_signature'])): ?>
-                        <img src="<?= htmlspecialchars($requisition['approver_signature']) ?>" alt="Assinatura Aprovador" class="max-h-24 mx-auto object-contain">
-                    <?php else: ?>
-                        <div class="text-xs text-slate-400 italic py-4"><?= $requisition['status'] === 'pendente' ? 'Aguardando aprovação' : 'Sem assinatura digital' ?></div>
-                    <?php endif; ?>
-                    <div class="text-xs font-semibold text-slate-700"><?= htmlspecialchars($requisition['approver_name'] ?? 'Gestor / Aprovador') ?></div>
-                </div>
+                <?php if (!$isAdminRequester || !empty($requisition['approver_signature'])): ?>
+                    <div class="p-4 rounded-2xl border bg-slate-50 text-center flex flex-col justify-between space-y-2" style="border-color: <?= $reqBorder ?>;">
+                        <div class="text-[11px] font-bold uppercase text-slate-500">Assinatura / Aprovação do Gestor</div>
+                        <div class="h-24 flex items-center justify-center">
+                            <?php if (!empty($requisition['approver_signature'])): ?>
+                                <img src="<?= htmlspecialchars($requisition['approver_signature']) ?>" alt="Assinatura Aprovador" class="max-h-24 mx-auto object-contain">
+                            <?php else: ?>
+                                <div class="text-xs text-slate-400 italic"><?= $requisition['status'] === 'pendente' ? 'Aguardando aprovação' : 'Sem assinatura digital' ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="text-xs font-semibold text-slate-700"><?= htmlspecialchars($requisition['approver_name'] ?? 'Gestor / Aprovador') ?></div>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 

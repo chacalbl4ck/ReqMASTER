@@ -7,6 +7,7 @@ use App\Helpers\Security;
 use App\Models\Requisition;
 use App\Models\Supplier;
 use App\Models\Contract;
+use App\Models\CostCenter;
 use App\Models\ActivityLog;
 use App\Models\Setting;
 use App\Models\User;
@@ -69,6 +70,7 @@ class RequisitionController
         }
 
         $companySettings = $this->settingModel->getAll();
+        $costCenters = (new CostCenter())->all(true);
 
         require __DIR__ . '/../../views/requisitions/create.php';
     }
@@ -561,6 +563,7 @@ class RequisitionController
             ? $this->contractModel->findBySupplier($selectedSupplierId, true) 
             : [];
         $companySettings = $this->settingModel->getAll();
+        $costCenters = (new CostCenter())->all(true);
 
         require __DIR__ . '/../../views/requisitions/edit.php';
     }

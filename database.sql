@@ -12,6 +12,7 @@ USE `sistema_requisicoes`;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS `security_attempts`;
+DROP TABLE IF EXISTS `cost_centers`;
 DROP TABLE IF EXISTS `settings`;
 DROP TABLE IF EXISTS `activity_logs`;
 DROP TABLE IF EXISTS `requisition_attachments`;
@@ -199,4 +200,17 @@ CREATE TABLE `security_attempts` (
   `locked_until` DATETIME NULL,
   `last_attempt_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY `uniq_ip_ctx_id` (`ip_address`, `context`, `identifier`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- 10. TABELA DE CENTROS DE CUSTO
+-- --------------------------------------------------------
+CREATE TABLE `cost_centers` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `code` VARCHAR(30) NOT NULL UNIQUE,
+  `name` VARCHAR(120) NOT NULL,
+  `description` VARCHAR(255) NULL,
+  `active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

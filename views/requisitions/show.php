@@ -83,10 +83,23 @@ $attachments = $requisition['attachments'] ?? [];
                     </form>
                 <?php endif; ?>
 
-                <!-- Botão Aprovar com Modal de Assinatura -->
-                <button type="button" onclick="openApprovalModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/30 transition">
-                    <i class="fas fa-check-circle mr-1"></i> Aprovar Requisição
-                </button>
+                <?php $isAdminRequester = (($requisition['requester_role'] ?? '') === 'admin'); ?>
+                <?php if ($isAdminRequester): ?>
+                    <!-- Solicitante é Admin: aprova diretamente sem solicitar assinatura do aprovador -->
+                    <form method="POST" action="<?= url('requisicoes/status') ?>" class="inline">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= $requisition['id'] ?>">
+                        <input type="hidden" name="status" value="aprovada">
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/30 transition">
+                            <i class="fas fa-check-circle mr-1"></i> Aprovar Requisição
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <!-- Botão Aprovar com Modal de Assinatura -->
+                    <button type="button" onclick="openApprovalModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/30 transition">
+                        <i class="fas fa-check-circle mr-1"></i> Aprovar Requisição
+                    </button>
+                <?php endif; ?>
 
                 <!-- Rejeitar -->
                 <button type="button" onclick="openRejectionModal(<?= $requisition['id'] ?>)" class="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold transition">
@@ -293,17 +306,25 @@ $attachments = $requisition['attachments'] ?? [];
                 </div>
 
                 <!-- Painel de Assinaturas Digitais Autenticadas -->
+                <?php $isAdminRequester = (($requisition['requester_role'] ?? '') === 'admin'); ?>
                 <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                        <i class="fas fa-signature text-indigo-600"></i> Assinaturas Digitais da Requisição
-                    </h3>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-signature text-indigo-600"></i> Assinaturas Digitais da Requisição
+                        </h3>
+                        <?php if ($isAdminRequester): ?>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                Solicitante Administrador (dispensa assinatura de aprovador)
+                            </span>
+                        <?php endif; ?>
+                    </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 <?= (!$isAdminRequester || !empty($requisition['approver_signature'])) ? 'sm:grid-cols-2' : '' ?> gap-4 items-stretch">
                         <!-- Assinatura do Solicitante -->
-                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between text-xs">
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between text-xs h-full">
                             <div>
-                                <span class="font-bold text-slate-700 block mb-1">1. Solicitante Responsável</span>
-                                <span class="text-slate-500"><?= htmlspecialchars($requisition['requester_name']) ?> (<?= htmlspecialchars($requisition['department']) ?>)</span>
+                                <span class="font-bold text-slate-700 block mb-1">1. Solicitante Responsável <?= $isAdminRequester ? '(Admin)' : '' ?></span>
+                                <span class="text-slate-500 block min-h-[18px]"><?= htmlspecialchars($requisition['requester_name']) ?> (<?= htmlspecialchars($requisition['department']) ?>)</span>
                             </div>
                             <div class="mt-3 p-2 bg-white rounded-lg border border-slate-200 h-24 flex items-center justify-center">
                                 <?php if (!empty($requisition['requester_signature'])): ?>
@@ -315,27 +336,29 @@ $attachments = $requisition['attachments'] ?? [];
                             <span class="text-[10px] text-slate-400 mt-2 block">Emitido em: <?= formatDateTime($requisition['created_at']) ?></span>
                         </div>
 
-                        <!-- Assinatura do Aprovador -->
-                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between text-xs">
-                            <div>
-                                <span class="font-bold text-slate-700 block mb-1">2. Gestor / Aprovador</span>
-                                <span class="text-slate-500"><?= !empty($requisition['approver_name']) ? htmlspecialchars($requisition['approver_name']) : 'Pendente de Avaliação' ?></span>
+                        <?php if (!$isAdminRequester || !empty($requisition['approver_signature'])): ?>
+                            <!-- Assinatura do Aprovador -->
+                            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between text-xs h-full">
+                                <div>
+                                    <span class="font-bold text-slate-700 block mb-1">2. Gestor / Aprovador</span>
+                                    <span class="text-slate-500 block min-h-[18px]"><?= !empty($requisition['approver_name']) ? htmlspecialchars($requisition['approver_name']) : 'Pendente de Avaliação' ?></span>
+                                </div>
+                                <div class="mt-3 p-2 bg-white rounded-lg border border-slate-200 h-24 flex items-center justify-center">
+                                    <?php if (!empty($requisition['approver_signature'])): ?>
+                                        <img src="<?= $requisition['approver_signature'] ?>" alt="Assinatura do Aprovador" class="max-h-full max-w-full object-contain">
+                                    <?php elseif ($requisition['status'] === 'aprovada' || $requisition['status'] === 'em_execucao' || $requisition['status'] === 'concluida'): ?>
+                                        <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                                            <i class="fas fa-check-circle"></i> Aprovado digitalmente no sistema
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-[11px] text-slate-400 italic">Aguardando aprovação</span>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-2 block">
+                                    <?= !empty($requisition['approved_at']) ? 'Decisão em: ' . formatDateTime($requisition['approved_at']) : 'Sem assinatura de aprovação' ?>
+                                </span>
                             </div>
-                            <div class="mt-3 p-2 bg-white rounded-lg border border-slate-200 h-24 flex items-center justify-center">
-                                <?php if (!empty($requisition['approver_signature'])): ?>
-                                    <img src="<?= $requisition['approver_signature'] ?>" alt="Assinatura do Aprovador" class="max-h-full max-w-full object-contain">
-                                <?php elseif ($requisition['status'] === 'aprovada' || $requisition['status'] === 'em_execucao' || $requisition['status'] === 'concluida'): ?>
-                                    <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                                        <i class="fas fa-check-circle"></i> Aprovado digitalmente no sistema
-                                    </span>
-                                <?php else: ?>
-                                    <span class="text-[11px] text-slate-400 italic">Aguardando aprovação</span>
-                                <?php endif; ?>
-                            </div>
-                            <span class="text-[10px] text-slate-400 mt-2 block">
-                                <?= !empty($requisition['approved_at']) ? 'Decisão em: ' . formatDateTime($requisition['approved_at']) : 'Sem assinatura de aprovação' ?>
-                            </span>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -348,12 +371,12 @@ $attachments = $requisition['attachments'] ?? [];
                     </div>
 
                     <!-- Resumo Rápido de Assinaturas da Requisição -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
+                    <div class="grid grid-cols-1 <?= (!$isAdminRequester || !empty($requisition['approver_signature'])) ? 'sm:grid-cols-2' : '' ?> gap-3 pb-2">
                         <!-- Assinatura do Solicitante -->
                         <div class="p-3.5 rounded-xl border <?= !empty($requisition['requester_signature']) ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-600' ?> text-xs space-y-1">
                             <div class="font-bold flex items-center gap-1.5 <?= !empty($requisition['requester_signature']) ? 'text-emerald-800' : 'text-slate-700' ?>">
                                 <i class="fas <?= !empty($requisition['requester_signature']) ? 'fa-check-circle text-emerald-600' : 'fa-clock text-slate-400' ?>"></i>
-                                <span>Assinatura do Solicitante</span>
+                                <span>Assinatura do Solicitante <?= $isAdminRequester ? '(Admin)' : '' ?></span>
                             </div>
                             <?php if (!empty($requisition['requester_signature'])): ?>
                                 <p class="text-[11px] text-emerald-800">Assinado por: <strong><?= htmlspecialchars($requisition['requester_name']) ?></strong></p>
@@ -366,22 +389,24 @@ $attachments = $requisition['attachments'] ?? [];
                             <?php endif; ?>
                         </div>
 
-                        <!-- Assinatura do Aprovador -->
-                        <div class="p-3.5 rounded-xl border <?= !empty($requisition['approver_signature']) ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-600' ?> text-xs space-y-1">
-                            <div class="font-bold flex items-center gap-1.5 <?= !empty($requisition['approver_signature']) ? 'text-emerald-800' : 'text-slate-700' ?>">
-                                <i class="fas <?= !empty($requisition['approver_signature']) ? 'fa-check-circle text-emerald-600' : 'fa-clock text-slate-400' ?>"></i>
-                                <span>Assinatura do Aprovador</span>
+                        <?php if (!$isAdminRequester || !empty($requisition['approver_signature'])): ?>
+                            <!-- Assinatura do Aprovador -->
+                            <div class="p-3.5 rounded-xl border <?= !empty($requisition['approver_signature']) ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-600' ?> text-xs space-y-1">
+                                <div class="font-bold flex items-center gap-1.5 <?= !empty($requisition['approver_signature']) ? 'text-emerald-800' : 'text-slate-700' ?>">
+                                    <i class="fas <?= !empty($requisition['approver_signature']) ? 'fa-check-circle text-emerald-600' : 'fa-clock text-slate-400' ?>"></i>
+                                    <span>Assinatura do Aprovador</span>
+                                </div>
+                                <?php if (!empty($requisition['approver_signature'])): ?>
+                                    <p class="text-[11px] text-emerald-800">Aprovado e assinado por: <strong><?= htmlspecialchars($requisition['approver_name'] ?? 'Gestor') ?></strong></p>
+                                    <p class="text-[10px] text-emerald-700">Registrado em: <?= formatDateTime($requisition['approved_at']) ?></p>
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold <?= str_contains($requisition['approver_signature'], 'CERTIFICADO') ? 'bg-emerald-200/70 text-emerald-900' : 'bg-slate-200/70 text-slate-700' ?>">
+                                        <?= str_contains($requisition['approver_signature'], 'CERTIFICADO') ? 'Certificado ICP-Brasil' : 'Assinatura Digital (Canvas)' ?>
+                                    </span>
+                                <?php else: ?>
+                                    <p class="text-[11px] text-slate-400">Aguardando aprovação formal.</p>
+                                <?php endif; ?>
                             </div>
-                            <?php if (!empty($requisition['approver_signature'])): ?>
-                                <p class="text-[11px] text-emerald-800">Aprovado e assinado por: <strong><?= htmlspecialchars($requisition['approver_name'] ?? 'Gestor') ?></strong></p>
-                                <p class="text-[10px] text-emerald-700">Registrado em: <?= formatDateTime($requisition['approved_at']) ?></p>
-                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold <?= str_contains($requisition['approver_signature'], 'CERTIFICADO') ? 'bg-emerald-200/70 text-emerald-900' : 'bg-slate-200/70 text-slate-700' ?>">
-                                    <?= str_contains($requisition['approver_signature'], 'CERTIFICADO') ? 'Certificado ICP-Brasil' : 'Assinatura Digital (Canvas)' ?>
-                                </span>
-                            <?php else: ?>
-                                <p class="text-[11px] text-slate-400">Aguardando aprovação formal.</p>
-                            <?php endif; ?>
-                        </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Linha do Tempo dos Eventos -->
@@ -810,7 +835,7 @@ $attachments = $requisition['attachments'] ?? [];
 
     function openApproverCertSigner() {
         const nonce = 'rm_app_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
-        const httpsBase = '<?= preg_replace('/^http:/i', 'https:', url('cert-auth/')) ?>';
+        const httpsBase = <?= json_encode(cert_auth_url($companySettings ?? [])) ?>;
         const docTitle = <?= json_encode($requisition['code'] . ' - ' . $requisition['title']) ?>;
         const targetUrl = `${httpsBase}?ctx=approver&nonce=${encodeURIComponent(nonce)}&doc_title=${encodeURIComponent(docTitle)}`;
         const popup = window.open(targetUrl, 'rmCertPopup', 'width=520,height=560,menubar=no,toolbar=no,location=yes,status=no');

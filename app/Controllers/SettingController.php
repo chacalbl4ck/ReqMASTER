@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Helpers\Security;
+use App\Models\ActivityLog;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\LicenseService;
@@ -18,6 +19,7 @@ class SettingController
     private MailService $mailService;
     private LicenseService $licenseService;
     private UpdateService $updateService;
+    private ActivityLog $logModel;
 
     public function __construct()
     {
@@ -27,6 +29,7 @@ class SettingController
         $this->mailService = new MailService();
         $this->licenseService = new LicenseService($this->settingModel);
         $this->updateService = new UpdateService();
+        $this->logModel = new ActivityLog();
     }
 
     public function index(): void
@@ -329,6 +332,7 @@ class SettingController
             'req_border_color'      => safe_hex_color($_POST['req_border_color'] ?? '#cbd5e1', '#cbd5e1'),
         ]);
 
+        $this->logModel->log('Configurações', 'Esquema de cores do site e requisições atualizado pelo administrador.');
         flash('success', 'Esquema de cores do site e das requisições atualizado com sucesso!');
         redirect('configuracoes?tab=cores');
     }
@@ -341,6 +345,8 @@ class SettingController
         }
 
         $isWebHosted = isset($_POST['is_web_hosted']) ? '1' : '0';
+        $mtlsPort = preg_replace('/\D/', '', trim($_POST['mtls_port'] ?? '8443')) ?: '8443';
+        $mtlsUrl  = trim($_POST['mtls_url'] ?? '');
 
         $this->settingModel->setMany([
             'turnstile_enabled'    => isset($_POST['turnstile_enabled']) ? '1' : '0',
@@ -349,8 +355,11 @@ class SettingController
             'is_web_hosted'        => $isWebHosted,
             'enable_qrcode_link'   => ($isWebHosted === '1' && isset($_POST['enable_qrcode_link'])) ? '1' : '0',
             'block_search_bots'    => ($isWebHosted === '1' && isset($_POST['block_search_bots'])) ? '1' : '0',
+            'mtls_port'            => $mtlsPort,
+            'mtls_url'             => $mtlsUrl,
         ]);
 
+        $this->logModel->log('Configurações Segurança', 'Parâmetros de segurança, hospedagem web, mTLS e Turnstile atualizados.');
         flash('success', 'Configurações de segurança, hospedagem Web e proteção salvas com sucesso!');
         redirect('configuracoes?tab=seguranca');
     }
@@ -366,8 +375,10 @@ class SettingController
         $res = $this->licenseService->activateKey($key);
 
         if ($res['success']) {
+            $this->logModel->log('Licença Ativada', "Administrador validou chave '{$key}' nas configurações.");
             flash('success', $res['message']);
         } else {
+            $this->logModel->log('Falha de Licença', "Tentativa inválida de licença '{$key}': " . $res['message']);
             flash('danger', $res['message']);
         }
 
@@ -392,6 +403,7 @@ class SettingController
         }
 
         $res = $this->updateService->applyUpdates();
+        $this->logModel->log('Atualização do Sistema', ($res['message'] ?? 'Atualização executada'));
         echo json_encode($res);
         exit;
     }

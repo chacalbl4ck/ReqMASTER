@@ -1,5 +1,5 @@
+# As diretivas SSLVerifyClient devem ser definidas no VirtualHost (ex: porta 8443)
+# para evitar o erro TLS 1.3 "Cannot perform Post-Handshake Authentication".
 <IfModule mod_ssl.c>
-    SSLVerifyClient optional_no_ca
-    SSLVerifyDepth 10
     SSLOptions +StdEnvVars +ExportCertData
 </IfModule>

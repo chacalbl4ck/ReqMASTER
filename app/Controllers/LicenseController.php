@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Helpers\Security;
+use App\Models\ActivityLog;
 use App\Models\Setting;
 use App\Services\LicenseService;
 
@@ -11,11 +12,13 @@ class LicenseController
 {
     private Setting $settingModel;
     private LicenseService $licenseService;
+    private ActivityLog $logModel;
 
     public function __construct()
     {
         $this->settingModel = new Setting();
         $this->licenseService = new LicenseService($this->settingModel);
+        $this->logModel = new ActivityLog();
     }
 
     public function index(): void
@@ -56,11 +59,13 @@ class LicenseController
         $result = $this->licenseService->activateKey($key);
         if (!$result['success']) {
             Security::recordFailedAttempt('license_activate', $ip, 6, 10);
+            $this->logModel->log('Falha de Licença', "Tentativa de ativação rejeitada para chave '{$key}': " . $result['message']);
             flash('danger', $result['message']);
             redirect('licenciamento');
         }
 
         Security::clearAttempts('license_activate', $ip);
+        $this->logModel->log('Licença Ativada', "Chave '{$key}' validada e ativada com sucesso.");
         flash('success', $result['message']);
         redirect('');
     }

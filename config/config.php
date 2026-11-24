@@ -48,6 +48,19 @@ function url(string $path = ''): string
     return BASE_URL . ($path ? '/' . $path : '');
 }
 
+function cert_auth_url(array $settings = []): string
+{
+    $custom = trim((string)($settings['mtls_url'] ?? ''));
+    if ($custom !== '') {
+        return rtrim($custom, '/') . '/';
+    }
+    $port = preg_replace('/\D/', '', (string)($settings['mtls_port'] ?? '8443')) ?: '8443';
+    $parsed = parse_url(BASE_URL);
+    $host = $parsed['host'] ?? 'localhost';
+    $path = rtrim((string)($parsed['path'] ?? ''), '/');
+    return "https://{$host}:{$port}{$path}/cert-auth/";
+}
+
 function asset(string $path): string
 {
     $path = ltrim($path, '/');

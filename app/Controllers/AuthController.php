@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Config\Database;
 use App\Helpers\Security;
+use App\Models\ActivityLog;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\TotpService;
@@ -13,11 +14,13 @@ class AuthController
 {
     private User $userModel;
     private TotpService $totpService;
+    private ActivityLog $logModel;
 
     public function __construct()
     {
         $this->userModel = new User();
         $this->totpService = new TotpService();
+        $this->logModel = new ActivityLog();
     }
 
     public function login(): void
@@ -107,10 +110,12 @@ class AuthController
                 }
 
                 $this->completeUserSession($user);
+                $this->logModel->log('Login', "Usuário {$user['name']} ({$user['email']}) acessou o sistema.", null, null, (int)$user['id']);
                 flash('success', "Bem-vindo(a), {$user['name']}!");
                 redirect('');
             } else {
                 Security::recordFailedAttempt('login', $email, 5, 15);
+                $this->logModel->log('Falha de Login', "Tentativa de login malsucedida para o e-mail '{$email}'.");
                 flash('danger', 'E-mail ou senha incorretos.');
                 redirect('login');
             }
@@ -183,10 +188,12 @@ class AuthController
                 Security::clearAttempts('totp_2fa', (string)$user['id']);
                 unset($_SESSION['pending_2fa']);
                 $this->completeUserSession($user);
+                $this->logModel->log('2FA Verificado', "Autenticação em 2 etapas confirmada para {$user['name']}.", null, null, (int)$user['id']);
                 flash('success', "Autenticação 2FA confirmada! Bem-vindo(a), {$user['name']}.");
                 redirect('');
             } else {
                 Security::recordFailedAttempt('totp_2fa', (string)$user['id'], 5, 15);
+                $this->logModel->log('Falha 2FA', "Código TOTP inválido inserido na conta {$user['email']}.", null, null, (int)$user['id']);
                 flash('danger', 'Código de autenticação 2FA inválido ou expirado.');
                 redirect('2fa');
             }
@@ -273,6 +280,7 @@ class AuthController
 
         unset($_SESSION['setup_totp_secret']);
         $_SESSION['fresh_recovery_codes'] = $recoveryCodes;
+        $this->logModel->log('2FA Ativado', "Administrador {$currentUser['name']} ativou autenticação em 2 etapas TOTP.");
         flash('success', 'Autenticação em 2 Etapas (TOTP) ativada com sucesso! Guarde seus códigos de recuperação.');
         redirect('perfil');
     }
@@ -298,6 +306,7 @@ class AuthController
         $stmt = $db->prepare("UPDATE users SET totp_secret = NULL, totp_enabled = 0, totp_recovery_codes = NULL WHERE id = :id");
         $stmt->execute(['id' => (int)$user['id']]);
 
+        $this->logModel->log('2FA Desativado', "Administrador {$user['name']} desativou a autenticação em 2 etapas.");
         flash('warning', 'Autenticação em 2 Etapas (TOTP) desativada na sua conta.');
         redirect('perfil');
     }
@@ -389,6 +398,10 @@ class AuthController
 
     public function logout(): void
     {
+        $u = Security::getUser();
+        if ($u) {
+            $this->logModel->log('Logout', "Usuário {$u['name']} encerrou a sessão.", null, null, (int)$u['id']);
+        }
         $_SESSION = [];
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
