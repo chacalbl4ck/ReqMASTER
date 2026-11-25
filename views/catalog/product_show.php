@@ -97,13 +97,15 @@ $nextDueDate = ($intervalDays && $lastMaint) ? date('Y-m-d', strtotime($lastMain
                             <a href="<?= asset($ph['filename']) ?>" target="_blank">
                                 <img src="<?= asset($ph['filename']) ?>" alt="Foto" class="w-full h-28 object-cover">
                             </a>
-                            <form method="POST" action="<?= url('produtos/foto/excluir') ?>" class="absolute top-1.5 right-1.5" onsubmit="return confirm('Remover esta foto?');">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="photo_id" value="<?= $ph['id'] ?>">
-                                <button type="submit" class="w-6 h-6 rounded-full bg-rose-600 text-white text-[10px] shadow flex items-center justify-center">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </form>
+                            <?php if (\App\Helpers\Security::hasRole(['admin'])): ?>
+                                <form method="POST" action="<?= url('produtos/foto/excluir') ?>" class="absolute top-1.5 right-1.5" onsubmit="return confirm('Remover esta foto?');">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="photo_id" value="<?= $ph['id'] ?>">
+                                    <button type="submit" class="w-6 h-6 rounded-full bg-rose-600 text-white text-[10px] shadow flex items-center justify-center" title="Excluir Foto">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>

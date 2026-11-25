@@ -329,14 +329,16 @@ $attachments = $requisition['attachments'] ?? [];
                                             <a href="<?= $attUrl ?>" download="<?= htmlspecialchars($att['original_name']) ?>" class="text-indigo-600 hover:text-indigo-800" title="Baixar">
                                                 <i class="fas fa-download"></i>
                                             </a>
-                                            <form method="POST" action="<?= url('requisicoes/anexo/excluir') ?>" class="inline" onsubmit="return confirm('Deseja excluir este anexo?');">
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="attachment_id" value="<?= $att['id'] ?>">
-                                                <input type="hidden" name="requisition_id" value="<?= $requisition['id'] ?>">
-                                                <button type="submit" class="text-rose-500 hover:text-rose-700" title="Excluir">
-                                                    <i class="fas fa-trash-alt"></i>
-                                                </button>
-                                            </form>
+                                            <?php if (\App\Helpers\Security::hasRole(['admin'])): ?>
+                                                <form method="POST" action="<?= url('requisicoes/anexo/excluir') ?>" class="inline" onsubmit="return confirm('Deseja excluir este anexo?');">
+                                                    <?= csrf_field() ?>
+                                                    <input type="hidden" name="attachment_id" value="<?= $att['id'] ?>">
+                                                    <input type="hidden" name="requisition_id" value="<?= $requisition['id'] ?>">
+                                                    <button type="submit" class="text-rose-500 hover:text-rose-700" title="Excluir">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>

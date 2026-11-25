@@ -254,7 +254,7 @@ class UpdateService
                     continue;
                 }
 
-                if (@file_put_contents($destPath, $content, LOCK_EX) === false) {
+                if (!$this->writeFileResilient($destPath, $content)) {
                     $errors[] = "Sem permissão para gravar arquivo: {$relPath}";
                     continue;
                 }
@@ -286,7 +286,7 @@ class UpdateService
                     'updated_count' => count($updatedFiles),
                     'updated_files' => $updatedFiles,
                     'errors'        => $errors,
-                    'message'       => 'Alguns arquivos não puderam ser substituídos: ' . implode('; ', $errors),
+                    'message'       => 'Alguns arquivos não puderam ser substituídos: ' . implode('; ', $errors) . '. No Linux/Ubuntu, garanta que o usuário do Apache (www-data) tenha posse e permissão de escrita na pasta do sistema (ex: sudo chown -R www-data:www-data ' . $this->projectRoot . ').',
                 ];
             }
 
@@ -322,6 +322,39 @@ class UpdateService
             return false;
         }
         return true;
+    }
+
+    /**
+     * Grava o arquivo atualizado diretamente ou via substituição atômica (temp + rename)
+     * para contornar bloqueios quando o arquivo pertence a outro usuário mas o diretório é gravável.
+     */
+    private function writeFileResilient(string $destPath, string $content): bool
+    {
+        if (file_exists($destPath) && !is_writable($destPath)) {
+            @chmod($destPath, 0644);
+        }
+
+        if (@file_put_contents($destPath, $content, LOCK_EX) !== false) {
+            return true;
+        }
+
+        $destDir = dirname($destPath);
+        if (!is_writable($destDir)) {
+            @chmod($destDir, 0755);
+        }
+
+        $tmpPath = @tempnam($destDir, '.rm_upd_');
+        if ($tmpPath !== false) {
+            if (@file_put_contents($tmpPath, $content, LOCK_EX) !== false) {
+                @chmod($tmpPath, 0644);
+                if (@rename($tmpPath, $destPath)) {
+                    return true;
+                }
+            }
+            @unlink($tmpPath);
+        }
+
+        return false;
     }
 
     private function localFileMatchesGitSha(string $localPath, string $remoteSha): bool

@@ -383,6 +383,8 @@ class RequisitionController
 
     public function deleteAttachment(): void
     {
+        Security::requireRole(['admin']);
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
             flash('danger', 'Ação não permitida.');
             redirect('requisicoes');
