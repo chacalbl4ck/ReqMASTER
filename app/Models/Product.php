@@ -587,14 +587,58 @@ class Product extends Model
 
     public function getOverdueMaintenance(): array
     {
-        $allProducts = $this->all(true);
+        $sql = "
+            SELECT p.*,
+                   CASE
+                       WHEN p.maintenance_interval_days IS NOT NULL AND p.maintenance_interval_days > 0 AND p.last_maintenance_at IS NOT NULL
+                       THEN DATEDIFF(CURDATE(), p.last_maintenance_at)
+                       ELSE NULL
+                   END as days_since_maintenance,
+                   CASE
+                       WHEN p.is_vehicle = 1 AND p.maintenance_interval_km IS NOT NULL AND p.maintenance_interval_km > 0 AND p.current_km IS NOT NULL
+                       THEN GREATEST(0, CAST(p.current_km AS SIGNED) - CAST(COALESCE(p.last_maintenance_km, 0) AS SIGNED))
+                       ELSE NULL
+                   END as km_since_maintenance,
+                   CASE
+                       WHEN p.maintenance_interval_days IS NOT NULL
+                            AND p.maintenance_interval_days > 0
+                            AND p.last_maintenance_at IS NOT NULL
+                            AND DATEDIFF(CURDATE(), p.last_maintenance_at) > p.maintenance_interval_days
+                       THEN 1
+                       ELSE 0
+                   END as is_days_overdue,
+                   CASE
+                       WHEN p.is_vehicle = 1
+                            AND p.maintenance_interval_km IS NOT NULL
+                            AND p.maintenance_interval_km > 0
+                            AND p.current_km IS NOT NULL
+                            AND (CAST(p.current_km AS SIGNED) - CAST(COALESCE(p.last_maintenance_km, 0) AS SIGNED)) >= p.maintenance_interval_km
+                       THEN 1
+                       ELSE 0
+                   END as is_km_overdue
+            FROM products p
+            WHERE p.active = 1
+              AND (
+                  (p.maintenance_interval_days IS NOT NULL AND p.maintenance_interval_days > 0 AND p.last_maintenance_at IS NOT NULL AND DATEDIFF(CURDATE(), p.last_maintenance_at) > p.maintenance_interval_days)
+                  OR
+                  (p.is_vehicle = 1 AND p.maintenance_interval_km IS NOT NULL AND p.maintenance_interval_km > 0 AND p.current_km IS NOT NULL AND (CAST(p.current_km AS SIGNED) - CAST(COALESCE(p.last_maintenance_km, 0) AS SIGNED)) >= p.maintenance_interval_km)
+                  OR
+                  (p.is_vehicle = 1 AND EXISTS (SELECT 1 FROM product_subitems ps WHERE ps.product_id = p.id))
+              )
+            ORDER BY p.name ASC
+        ";
+        $candidates = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($candidates)) {
+            return [];
+        }
+
         $overdueSubMap = [];
         foreach ($this->getOverdueSubitems() as $sub) {
             $overdueSubMap[(int)$sub['product_id']][] = $sub;
         }
 
         $result = [];
-        foreach ($allProducts as $p) {
+        foreach ($candidates as $p) {
             $pid = (int)$p['id'];
             $overdueSubs = $overdueSubMap[$pid] ?? [];
             $isDaysLate = !empty($p['is_days_overdue']);

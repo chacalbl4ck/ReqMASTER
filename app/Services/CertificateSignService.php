@@ -19,11 +19,61 @@ class CertificateSignService
             ];
         }
 
+        return $this->buildFromCertAndKey($pemCert, null, $docData, $clientVerify, 'BROWSER_OS_X509', 'ASSINADO VIA CERTIFICADO DIGITAL (NAVEGADOR / SO)');
+    }
+
+    /**
+     * Valida e assina criptograficamente um documento usando arquivo Certificado A1 (.pfx / .p12) + senha.
+     */
+    public function signWithPfx(string $pfxBinary, string $password, array $docData): array
+    {
+        if ($pfxBinary === '') {
+            return [
+                'success' => false,
+                'message' => 'Arquivo do Certificado Digital A1 (.pfx / .p12) vazio ou inválido.'
+            ];
+        }
+
+        $certs = [];
+        if (!@openssl_pkcs12_read($pfxBinary, $certs, $password)) {
+            $errDetail = '';
+            while ($e = openssl_error_string()) {
+                $errDetail = $e;
+            }
+            $hint = (str_contains(strtolower($errDetail), 'unsupported') || str_contains(strtolower($errDetail), 'rc2'))
+                ? ' Este certificado utiliza algoritmo legado no OpenSSL 3; reexporte o .pfx com AES-256 ou habilite o provider legacy no OpenSSL.'
+                : ' Verifique a senha informada e se o arquivo é um certificado A1 válido (.pfx / .p12).';
+            return [
+                'success' => false,
+                'message' => 'Não foi possível abrir o Certificado Digital A1.' . $hint
+            ];
+        }
+
+        $pemCert = (string)($certs['cert'] ?? '');
+        $privPem = (string)($certs['pkey'] ?? '');
+        if ($pemCert === '' || $privPem === '') {
+            return [
+                'success' => false,
+                'message' => 'O arquivo .pfx/.p12 não contém certificado público e chave privada válidos.'
+            ];
+        }
+
+        return $this->buildFromCertAndKey($pemCert, $privPem, $docData, 'PKCS12_VERIFIED', 'A1_PKCS12', 'ASSINADO DIGITALMENTE VIA CERTIFICADO A1 (.PFX)');
+    }
+
+    private function buildFromCertAndKey(
+        string $pemCert,
+        ?string $privPem,
+        array $docData,
+        string $clientVerify,
+        string $method,
+        string $sealTitle
+    ): array {
         $certRes = @openssl_x509_read($pemCert);
         if (!$certRes) {
             return [
                 'success' => false,
-                'message' => 'Não foi possível decodificar o certificado X.509 fornecido pelo navegador.'
+                'message' => 'Não foi possível decodificar o certificado X.509.'
             ];
         }
 
@@ -78,20 +128,24 @@ class CertificateSignService
 
         $cleanName = trim((string)preg_replace('/:\d+$/', '', $commonName));
 
-        // Impressão digital SHA-256 do certificado público apresentado pelo navegador
         $certFingerprint = @openssl_x509_fingerprint($certRes, 'sha256') ?: hash('sha256', $pemCert);
-
-        // Hash canônico do documento vinculado ao certificado do titular
         $canonical = json_encode($docData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $hashSha256 = hash('sha256', $canonical . '|' . $certFingerprint . '|' . $serialNumber);
+
+        $cryptoSignature = null;
+        if ($privPem !== null) {
+            $pkey = @openssl_pkey_get_private($privPem);
+            if ($pkey && @openssl_sign((string)$canonical, $rawSig, $pkey, OPENSSL_ALGO_SHA256)) {
+                $cryptoSignature = base64_encode($rawSig);
+            }
+        }
 
         $now = date('d/m/Y H:i:s');
         $expFormatted = $validTo > 0 ? date('d/m/Y', $validTo) : 'Ativo';
 
-        // Carimbo visual oficial da assinatura via Certificado do Navegador (Windows/Linux)
         $sealDataUri = $this->generateVisualSeal([
             'type'       => 'ICP-BR',
-            'title'      => 'ASSINADO VIA CERTIFICADO DIGITAL (NAVEGADOR / SO)',
+            'title'      => $sealTitle,
             'name'       => $cleanName,
             'doc'        => $formattedDoc,
             'issuer'     => $issuerName,
@@ -103,7 +157,7 @@ class CertificateSignService
         ]);
 
         $payload = [
-            'method'           => 'BROWSER_OS_X509',
+            'method'           => $method,
             'signer_name'      => $cleanName,
             'signer_doc'       => $formattedDoc,
             'issuer'           => $issuerName,
@@ -112,8 +166,11 @@ class CertificateSignService
             'valid_to'         => $expFormatted,
             'signed_at'        => date('Y-m-d H:i:s'),
             'hash_sha256'      => $hashSha256,
-            'tls_verify'       => $clientVerify ?: 'PRESENTED'
+            'tls_verify'       => $clientVerify ?: 'PRESENTED',
         ];
+        if ($cryptoSignature !== null) {
+            $payload['rsa_ecdsa_sha256'] = $cryptoSignature;
+        }
 
         return [
             'success'        => true,

@@ -72,6 +72,7 @@ class RequisitionController
         }
 
         $companySettings = $this->settingModel->getAll();
+        $mtlsStatus = $this->checkLocalMtlsAvailability($companySettings);
         $costCenters = (new CostCenter())->all(true);
         $products = (new Product())->all(true);
         $services = (new ServiceCatalog())->all(true);
@@ -267,6 +268,7 @@ class RequisitionController
         $logs = $this->logModel->getByRequisition($id);
         $currentUser = Security::getUser();
         $companySettings = $this->settingModel->getAll();
+        $mtlsStatus = $this->checkLocalMtlsAvailability($companySettings);
 
         $qrCodeUrl = null;
         if (($companySettings['is_web_hosted'] ?? '0') === '1' && ($companySettings['enable_qrcode_link'] ?? '0') === '1') {
@@ -689,6 +691,44 @@ class RequisitionController
     {
         header('Content-Type: application/json; charset=utf-8');
 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['pfx_file'])) {
+            if (!verify_csrf()) {
+                echo json_encode(['success' => false, 'message' => 'Token CSRF inválido. Recarregue a página e tente novamente.']);
+                exit;
+            }
+
+            $file = $_FILES['pfx_file'];
+            if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                echo json_encode(['success' => false, 'message' => 'Falha no envio do arquivo .pfx/.p12.']);
+                exit;
+            }
+
+            $ext = strtolower(pathinfo((string)($file['name'] ?? ''), PATHINFO_EXTENSION));
+            if (!in_array($ext, ['pfx', 'p12'], true)) {
+                echo json_encode(['success' => false, 'message' => 'Formato inválido. Selecione um arquivo de certificado A1 (.pfx ou .p12).']);
+                exit;
+            }
+
+            if ((int)($file['size'] ?? 0) > 5 * 1024 * 1024) {
+                echo json_encode(['success' => false, 'message' => 'Arquivo de certificado excede o limite de 5 MB.']);
+                exit;
+            }
+
+            $pfxBinary = @file_get_contents((string)$file['tmp_name']);
+            $password  = (string)($_POST['pfx_password'] ?? '');
+            $docData   = [
+                'app'       => APP_NAME,
+                'title'     => (string)($_POST['doc_title'] ?? 'Requisição ReqMaster'),
+                'timestamp' => date('Y-m-d H:i:s'),
+                'user'      => $_SESSION['user']['name'] ?? 'Usuário',
+                'ip'        => Security::getClientIp(),
+            ];
+
+            $result = $this->certService->signWithPfx((string)$pfxBinary, $password, $docData);
+            echo json_encode($result);
+            exit;
+        }
+
         $nonce = preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['nonce'] ?? $_POST['nonce'] ?? '');
         if (!empty($nonce) && !empty($_SESSION['pending_cert_signature'][$nonce]['result'])) {
             $res = $_SESSION['pending_cert_signature'][$nonce]['result'];
@@ -716,5 +756,20 @@ class RequisitionController
             'message' => 'Aguardando seleção do certificado digital instalado no Windows ou Linux pelo navegador.'
         ]);
         exit;
+    }
+
+    private function checkLocalMtlsAvailability(array $settings): array
+    {
+        $customUrl = trim((string)($settings['mtls_url'] ?? ''));
+        $port = (int)(preg_replace('/\D/', '', (string)($settings['mtls_port'] ?? '8443')) ?: '8443');
+        if ($customUrl !== '') {
+            return ['configured_custom' => true, 'local_open' => true, 'port' => $port];
+        }
+        $fp = @fsockopen('127.0.0.1', $port, $errno, $errstr, 0.08);
+        $isOpen = is_resource($fp);
+        if ($isOpen) {
+            @fclose($fp);
+        }
+        return ['configured_custom' => false, 'local_open' => $isOpen, 'port' => $port];
     }
 }

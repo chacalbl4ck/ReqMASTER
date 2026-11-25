@@ -6,13 +6,24 @@ namespace App\Services;
 class VaultService
 {
     private const VAULT_BLOBS = [
-        'upd_repo'  => 'j6mXYAl638XiwifduuPPQAwYWffaY9BNZuWbAGk4oE4VVyMFIznqQ+3qaTpSaJ0ahg==',
-        'upd_token' => 'X3bKBffoel2yNH38o2aI14c3wVfrsr9bgLM2zMH7zbFZ7Qt0dA0vmuKCyM1sBLaj4VSi0mBHQvXBV3Lt3TFWmRc9yBJK2tpcrSAsHhwRvrBEKneEqAjwFD6D8YhHDVi+VBj471vj7ROFU9HPhDg2GF8evM4dVmr5/Q==',
-        'lic_repo'  => 'i8gnsRE5bthC7BHXPPO+3GOZDQ2auoP4x3fZ14hWljSfdNZMdkiuUXAmFrzIFlmRLeDwDxnHNaXO',
-        'lic_token' => 'sBp9P7e8ymsdiT290gzZgy9dSybcDa4rSkqnr7ftHDBsofSIaclS2A2/l0HlgCbRgKIRJ4ZbXEQ2jj8ciw4Hra2GrauvHOVndMWsk8dfOUCs0cmmy0Nq/aZJhnbqGv3Um588nYJMLeEFiz3b6bSK0n92VGsKY7R2hg==',
-        'lic_file'  => 'QL6KuSm7k9plm164vGRLyNFqpSWNjmRB9dQFlkR75PhdCW8J',
+        '0x4a' => 'LMOOQymE8fWzyC6Hbb1HoAreVGMuiMONyDL6PQzBVthG+d77WucvzGc57rlbY0R5dw==',
+        '0x4b' => 'Inkv1bZrxHrsGIiMPp7aeOFjNz7AZh9lqz4/gRVk49uuGuz7Jmy/ItNkXWHiRUPkDFe6nun4VJ2DlUioTn8BuCMsJXUU/2eUciHhXAnaLLt4ZCl1f7OPjyIlqNF31buwH3VxXrqgRH+BKuUx7FgwWmGB9Q9gAEJ5xg==',
+        '0x4c' => 'u+5Jo9sTQ3K8HCRdrj4M6kY14ZuB44a+bX+juNHlAe1y7P2+yUlcRJ70FpEUWPWkhs8cfOpD3RW0',
+        '0x4d' => 'yH3G8Jg0iZzobDTVJ6YwamEKKWPJZlfxvcU6T7DQhCF/qetx2ifmwbvWF6QziUea3IXSE+4MjYZpIf2PbA94H3UJlOQI9z6morD+vvhLdhl2AaiU7y9jmJdNI1djYzL71+wyvAc/2nxX7cf1MGQH8YMslHQDKEYS5A==',
+        '0x4e' => 'w3qPHLLNosq2352AjDYjFxe0REbi1HFbzCRR16arbyNQD5Fi',
+        '0x4f' => 'gHlGyZhpS3DPesKkNpcGMtuXFQOi0sw7MmQ7rXAcrHmj3Lq5aaeI53iEAnFjQrL8A1Bx3t8PKjwT',
+        '0x50' => 'WWKt0HNH/k3u0sF56X/4FlbzAaxu/ANJcBJolUvaxJT3+G5qZFK20PeVQMW6eQ==',
+        '0x51' => 'kVXFP6bMiFyWmiq1qMgD8mSqUd2z8H/GpQ26pBn27sxjuOpvIJ180ytajMNlMIaKHbI=',
+        '0x52' => 'K8dfLyyG9RtPKmfBc9kNU0EeVEzaufYurU3Sdln0zwLeHbOWWouZC+lAREyz5zg=',
+        '0x53' => 'o6SdLwJjXY9yZwFYP57up71fReZ4ERZ9NM/CiFkA4GdXI5AQEMDw',
+        '0x54' => 'hKSnM2RedaRhtSJ/uyFGuWEaIIcig7ayJ9bBVw4ItOhPPDsrjDqM',
+        '0x55' => 'qsJu55LSjPE5+WnXh7cpKMxHkVzwKWww2MZao01w3ZtDjEY9ACgl5mUGOvTYJE+jKhHsscMtbfoClmc=',
+        '0x56' => 'rqfwavd5yxlq1u3ZN0LHwkUROgrLT0X0e0nbgQXgjN1x6h6dyY+1FTrHou7rFbagub30iApxvQ==',
+        '0x57' => 'YgN9kcDIczSFVAtHkQGJo/9onlVZW5WeJp7Doqh0iDpQhNt85RY=',
+        '0x58' => '9MXKrxyzVk+GaxK6bpmaiPNdUv5HjxurA9AQp5LewG8Kqapa/6z4zhrBYe9og3Sw9DWH41fafn/iCWCW',
     ];
 
+    private static bool $dirChecked = false;
     private string $vaultDir;
 
     public function __construct()
@@ -23,19 +34,29 @@ class VaultService
 
     private function ensureVaultDir(): void
     {
+        if (self::$dirChecked) {
+            return;
+        }
         if (!is_dir($this->vaultDir)) {
             @mkdir($this->vaultDir, 0750, true);
         }
         $htaccess = $this->vaultDir . '/.htaccess';
-        if (!file_exists($htaccess)) {
+        if (is_dir($this->vaultDir) && is_writable($this->vaultDir) && !file_exists($htaccess)) {
             @file_put_contents($htaccess, "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Order allow,deny\n    Deny from all\n</IfModule>\n");
         }
+        self::$dirChecked = true;
     }
 
     private function getEmbeddedKey(): string
     {
-        $seed = implode('', ['RM_', '2026_', 'Vault_', 'Master_', '99xK_', 'Sec']);
-        return hash('sha256', $seed, true);
+        $p1 = [0x41, 0x5e, 0x4c, 0x2a, 0x22, 0x6b];
+        $p2 = [0x61, 0x5c, 0x46, 0x5e, 0x75, 0x12];
+        $p3 = [0x79, 0x30, 0x3b, 0x1e, 0x31, 0x76];
+        $raw = '';
+        foreach ($p1 as $b) $raw .= chr($b ^ 0x13);
+        foreach ($p2 as $b) $raw .= chr($b ^ 0x2a);
+        foreach ($p3 as $b) $raw .= chr($b ^ 0x41);
+        return hash('sha256', $raw . '|' . base64_decode('Uk1fQ09SRV9TRUNfMjAyNw=='), true);
     }
 
     private function getServerBoundKey(): string

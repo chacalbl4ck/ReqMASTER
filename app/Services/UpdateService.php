@@ -78,15 +78,18 @@ class UpdateService
      */
     public function checkUpdates(): array
     {
-        $repo  = $this->vault->getCredential('upd_repo');
-        $token = $this->vault->getCredential('upd_token');
+        $repo   = $this->vault->getCredential('0x4a');
+        $token  = $this->vault->getCredential('0x4b');
+        $epBase = $this->vault->getCredential('0x4f');
+        $epCom  = $this->vault->getCredential('0x52');
+        $epTree = $this->vault->getCredential('0x53');
 
-        if (empty($repo) || empty($token)) {
+        if ($repo === '' || $token === '' || $epBase === '') {
             return ['success' => false, 'message' => 'Canal oficial de atualizações indisponível.'];
         }
 
         // 1. Busca o último commit do branch principal
-        $commits = $this->githubApiJson("https://api.github.com/repos/{$repo}/commits?per_page=1", $token);
+        $commits = $this->githubApiJson($epBase . $repo . $epCom, $token);
         if (!is_array($commits) || empty($commits[0]['sha'])) {
             return ['success' => false, 'message' => 'Não foi possível consultar a versão mais recente no servidor remoto.'];
         }
@@ -95,7 +98,7 @@ class UpdateService
         $remoteCommitSha = (string)$latestCommit['sha'];
 
         // 2. Obtém árvore completa de arquivos do commit
-        $treeData = $this->githubApiJson("https://api.github.com/repos/{$repo}/git/trees/{$remoteCommitSha}?recursive=1", $token);
+        $treeData = $this->githubApiJson($epBase . $repo . $epTree . $remoteCommitSha . '?recursive=1', $token);
         if (!is_array($treeData) || empty($treeData['tree'])) {
             return ['success' => false, 'message' => 'Falha ao obter a listagem de arquivos da nova versão.'];
         }
@@ -174,10 +177,13 @@ class UpdateService
      */
     public function applyUpdates(): array
     {
-        $repo  = $this->vault->getCredential('upd_repo');
-        $token = $this->vault->getCredential('upd_token');
+        $repo   = $this->vault->getCredential('0x4a');
+        $token  = $this->vault->getCredential('0x4b');
+        $epBase = $this->vault->getCredential('0x4f');
+        $epTree = $this->vault->getCredential('0x53');
+        $epBlob = $this->vault->getCredential('0x54');
 
-        if (empty($repo) || empty($token)) {
+        if ($repo === '' || $token === '' || $epBase === '') {
             return ['success' => false, 'message' => 'Canal oficial de atualizações indisponível.'];
         }
 
@@ -195,7 +201,7 @@ class UpdateService
         }
 
         $remoteCommitSha = (string)$check['full_commit_sha'];
-        $treeData = $this->githubApiJson("https://api.github.com/repos/{$repo}/git/trees/{$remoteCommitSha}?recursive=1", $token);
+        $treeData = $this->githubApiJson($epBase . $repo . $epTree . $remoteCommitSha . '?recursive=1', $token);
         if (!is_array($treeData) || empty($treeData['tree'])) {
             return ['success' => false, 'message' => 'Falha ao carregar árvore de arquivos para atualização.'];
         }
@@ -225,7 +231,7 @@ class UpdateService
                     continue;
                 }
 
-                $blob = $this->githubApiJson("https://api.github.com/repos/{$repo}/git/blobs/{$blobSha}", $token);
+                $blob = $this->githubApiJson($epBase . $repo . $epBlob . $blobSha, $token);
                 if (!is_array($blob) || !isset($blob['content'])) {
                     $errors[] = "Falha ao baixar: {$relPath}";
                     continue;
@@ -376,8 +382,19 @@ class UpdateService
     private function githubApiJson(string $url, string $token): ?array
     {
         $raw = null;
+        $acceptHdr = $this->vault->getCredential('0x56') ?: 'application/json';
+        $verHdr    = $this->vault->getCredential('0x58');
 
         if (function_exists('curl_init')) {
+            $headers = [
+                'User-Agent: ReqMaster-UpdateEngine',
+                'Accept: ' . $acceptHdr,
+                'Authorization: Bearer ' . $token,
+                'Cache-Control: no-cache',
+            ];
+            if ($verHdr !== '') {
+                $headers[] = $verHdr;
+            }
             $ch = curl_init($url);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
@@ -385,13 +402,7 @@ class UpdateService
                 CURLOPT_CONNECTTIMEOUT => 8,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_HTTPHEADER     => [
-                    'User-Agent: ReqMaster-UpdateEngine',
-                    'Accept: application/vnd.github+json',
-                    'Authorization: Bearer ' . $token,
-                    'X-GitHub-Api-Version: 2022-11-28',
-                    'Cache-Control: no-cache',
-                ],
+                CURLOPT_HTTPHEADER     => $headers,
             ]);
             $res = curl_exec($ch);
             $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -401,13 +412,15 @@ class UpdateService
                 $raw = (string)$res;
             }
         } else {
+            $headerLines = "User-Agent: ReqMaster-UpdateEngine\r\n"
+                         . "Accept: {$acceptHdr}\r\n"
+                         . "Authorization: Bearer {$token}\r\n"
+                         . ($verHdr !== '' ? "{$verHdr}\r\n" : '');
             $opts = [
                 'http' => [
                     'method'  => 'GET',
                     'timeout' => 20,
-                    'header'  => "User-Agent: ReqMaster-UpdateEngine\r\n"
-                               . "Accept: application/vnd.github+json\r\n"
-                               . "Authorization: Bearer {$token}\r\n",
+                    'header'  => $headerLines,
                 ],
             ];
             $ctx = stream_context_create($opts);

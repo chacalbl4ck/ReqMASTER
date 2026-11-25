@@ -681,17 +681,39 @@ $attachments = $requisition['attachments'] ?? [];
                 <canvas id="approverCanvas" width="450" height="120" class="w-full h-28 bg-white rounded-xl border border-slate-200 cursor-crosshair touch-none"></canvas>
             </div>
 
-            <!-- Modo 2: Integração Nativa com Certificados Instalados no Windows / Linux -->
+            <!-- Modo 2: Certificado Digital A1 (.pfx/.p12) Direto ou A3 via Navegador (mTLS) -->
+            <?php $mtlsReady = !empty($mtlsStatus['local_open']); $mtlsPortNum = (int)($mtlsStatus['port'] ?? 8443); ?>
             <div id="approverCertContainer" class="hidden border border-emerald-200 rounded-2xl p-4 bg-emerald-50/50 space-y-3">
-                <div class="text-xs text-emerald-950 font-bold flex items-center gap-1.5">
-                    <i class="fas fa-shield-alt text-emerald-600"></i> Integração Direta com Certificados do Sistema (A1 ou Token A3)
+                <div class="bg-white rounded-xl border border-emerald-200 p-3 space-y-2">
+                    <div class="text-xs text-emerald-950 font-bold flex items-center gap-1.5">
+                        <i class="fas fa-file-signature text-emerald-600"></i> Certificado Digital A1 (Arquivo .pfx / .p12)
+                    </div>
+                    <p class="text-[11px] text-slate-600 leading-relaxed">
+                        Assine diretamente enviando seu <code>.pfx</code> ou <code>.p12</code> e senha (sem precisar da porta <code>8443</code>). Nada é gravado em disco.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="file" id="appPfxFile" accept=".pfx,.p12" class="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-emerald-50 file:text-emerald-700">
+                        <input type="password" id="appPfxPassword" autocomplete="off" placeholder="Senha do A1" class="text-xs rounded-lg border-slate-300 px-2.5 py-1.5">
+                    </div>
+                    <div id="appPfxError" class="hidden text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1.5"></div>
+                    <button type="button" onclick="signApproverWithPfx()" id="btnSignAppPfx" class="w-full py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                        <i class="fas fa-key"></i> Assinar com Certificado A1 (.pfx / .p12)
+                    </button>
                 </div>
-                <p class="text-[11px] text-slate-600 leading-relaxed">
-                    O navegador exibirá o seletor oficial de certificados digitais instalados no seu <strong>Windows</strong> ou <strong>Linux</strong> (A1 ou Token/Smartcard A3 com PIN).
-                </p>
-                <button type="button" onclick="openApproverCertSigner()" id="btnValidateAppCert" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
-                    <i class="fas fa-id-card"></i> Selecionar Certificado Instalado no Sistema (A1 / A3)
-                </button>
+
+                <div class="border-t border-emerald-200/80 pt-2.5 space-y-2">
+                    <div class="text-xs text-slate-800 font-bold flex items-center gap-1.5">
+                        <i class="fas fa-id-card text-sky-600"></i> Token A3 / Certificado do Sistema (mTLS)
+                    </div>
+                    <?php if (!$mtlsReady): ?>
+                        <div class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-900">
+                            <strong>Porta mTLS <?= $mtlsPortNum ?> inativa:</strong> use o arquivo A1 acima ou configure o VirtualHost SSL mTLS em Configurações &gt; Segurança.
+                        </div>
+                    <?php endif; ?>
+                    <button type="button" onclick="openApproverCertSigner()" id="btnValidateAppCert" class="w-full py-2 px-4 <?= $mtlsReady ? 'bg-sky-600 hover:bg-sky-700 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-700' ?> rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                        <i class="fas fa-shield-alt"></i> Selecionar Token A3 / Navegador (Porta <?= $mtlsPortNum ?>)
+                    </button>
+                </div>
             </div>
 
             <!-- Feedback e Prévia do Selo Digital Gerado -->
@@ -898,7 +920,55 @@ $attachments = $requisition['attachments'] ?? [];
         document.getElementById('approverSealFeedback').classList.remove('hidden');
     }
 
+    async function signApproverWithPfx() {
+        const fileInp = document.getElementById('appPfxFile');
+        const passInp = document.getElementById('appPfxPassword');
+        const errBox  = document.getElementById('appPfxError');
+        const btn     = document.getElementById('btnSignAppPfx');
+
+        errBox.classList.add('hidden');
+        errBox.textContent = '';
+
+        if (!fileInp.files || !fileInp.files[0]) {
+            errBox.textContent = 'Selecione o arquivo do Certificado Digital A1 (.pfx ou .p12).';
+            errBox.classList.remove('hidden');
+            return;
+        }
+
+        const fd = new FormData();
+        fd.append('csrf_token', <?= json_encode(csrf_token()) ?>);
+        fd.append('pfx_file', fileInp.files[0]);
+        fd.append('pfx_password', passInp.value || '');
+        fd.append('doc_title', <?= json_encode($requisition['code'] . ' - ' . $requisition['title']) ?>);
+
+        btn.disabled = true;
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando certificado...';
+
+        try {
+            const resp = await fetch(<?= json_encode(url('requisicoes/assinar-certificado')) ?>, { method: 'POST', body: fd });
+            const data = await resp.json();
+            if (data && data.success) {
+                applyApproverCertResult(data);
+                passInp.value = '';
+            } else {
+                errBox.textContent = (data && data.message) ? data.message : 'Falha ao validar certificado A1.';
+                errBox.classList.remove('hidden');
+            }
+        } catch (e) {
+            errBox.textContent = 'Erro de comunicação ao processar o certificado A1.';
+            errBox.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
+    }
+
     function openApproverCertSigner() {
+        const mtlsReady = <?= json_encode(!empty($mtlsStatus['local_open'])) ?>;
+        if (!mtlsReady && !confirm('A porta mTLS configurada (<?= (int)($mtlsStatus['port'] ?? 8443) ?>) não respondeu localmente e pode exibir ERR_CONNECTION_REFUSED. Deseja tentar abrir mesmo assim?\n\nDica: para Certificado A1 (.pfx/.p12), use a opção logo acima.')) {
+            return;
+        }
         const nonce = 'rm_app_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
         const httpsBase = <?= json_encode(cert_auth_url($companySettings ?? [])) ?>;
         const docTitle = <?= json_encode($requisition['code'] . ' - ' . $requisition['title']) ?>;

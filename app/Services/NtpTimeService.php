@@ -101,12 +101,20 @@ class NtpTimeService
     {
         $cleanCnpj = preg_replace('/\D/', '', $cnpj);
 
-        if (
-            is_array($cachedGeo) &&
-            !empty($cachedGeo['timezone']) &&
-            ($cachedGeo['cnpj'] ?? '') === $cleanCnpj &&
-            !empty($cachedGeo['found'])
-        ) {
+        $geoCacheFresh = is_array($cachedGeo)
+            && !empty($cachedGeo['timezone'])
+            && ($cachedGeo['cnpj'] ?? '') === $cleanCnpj
+            && (!empty($cachedGeo['found']) || (!empty($cachedGeo['checked_at']) && (time() - (int)$cachedGeo['checked_at']) < 86400));
+
+        if ($cleanCnpj === '') {
+            $geo = [
+                'found'    => false,
+                'cnpj'     => '',
+                'city'     => 'Padrão Nacional',
+                'uf'       => 'BR',
+                'timezone' => 'America/Sao_Paulo',
+            ];
+        } elseif ($geoCacheFresh) {
             $geo = $cachedGeo;
         } else {
             $geo = $this->lookupCnpjLocation($cleanCnpj);

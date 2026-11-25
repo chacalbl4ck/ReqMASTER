@@ -25,8 +25,12 @@ class Setting extends Model
             return;
         }
 
-        $versionFile = __DIR__ . '/../../config/vault/schema.ver';
-        if (is_file($versionFile) && trim((string)@file_get_contents($versionFile)) === self::SCHEMA_VERSION) {
+        $vaultVerFile = __DIR__ . '/../../config/vault/schema.ver';
+        $tmpVerFile   = rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . 'rm_schema_' . substr(md5(__DIR__), 0, 12) . '.ver';
+        if (
+            (is_file($vaultVerFile) && trim((string)@file_get_contents($vaultVerFile)) === self::SCHEMA_VERSION) ||
+            (is_file($tmpVerFile) && trim((string)@file_get_contents($tmpVerFile)) === self::SCHEMA_VERSION)
+        ) {
             self::$initialized = true;
             return;
         }
@@ -268,11 +272,12 @@ class Setting extends Model
                 'req_border_color'      => '#cbd5e1',
             ];
 
-            foreach ($defaults as $k => $v) {
-                $stmtCheck = $this->db->prepare("SELECT COUNT(*) FROM `settings` WHERE `key_name` = :k");
-                $stmtCheck->execute(['k' => $k]);
-                if ((int)$stmtCheck->fetchColumn() === 0) {
-                    $stmtIns = $this->db->prepare("INSERT INTO `settings` (`key_name`, `value`) VALUES (:k, :v)");
+            $existingKeys = $this->db->query("SELECT `key_name` FROM `settings`")->fetchAll(PDO::FETCH_COLUMN);
+            $existingSet = array_flip(is_array($existingKeys) ? $existingKeys : []);
+            $missing = array_diff_key($defaults, $existingSet);
+            if (!empty($missing)) {
+                $stmtIns = $this->db->prepare("INSERT IGNORE INTO `settings` (`key_name`, `value`) VALUES (:k, :v)");
+                foreach ($missing as $k => $v) {
                     $stmtIns->execute(['k' => $k, 'v' => $v]);
                 }
             }
@@ -283,9 +288,12 @@ class Setting extends Model
             $this->ensureIndex('products', 'idx_prod_veh_active', '`is_vehicle`, `active`');
             $this->ensureIndex('vehicle_mileage_logs', 'idx_mil_prod_date', '`product_id`, `recorded_at`');
 
-            $vaultDir = dirname($versionFile);
-            if (is_dir($vaultDir) && is_writable($vaultDir)) {
-                @file_put_contents($versionFile, self::SCHEMA_VERSION);
+            $vaultDir = dirname($vaultVerFile);
+            if ((is_dir($vaultDir) && is_writable($vaultDir)) || (!is_dir($vaultDir) && @mkdir($vaultDir, 0750, true))) {
+                @file_put_contents($vaultVerFile, self::SCHEMA_VERSION, LOCK_EX);
+            }
+            if (!is_file($vaultVerFile) || trim((string)@file_get_contents($vaultVerFile)) !== self::SCHEMA_VERSION) {
+                @file_put_contents($tmpVerFile, self::SCHEMA_VERSION, LOCK_EX);
             }
 
             self::$initialized = true;
