@@ -23,7 +23,14 @@ spl_autoload_register(function ($class) {
     $relativeClass = substr($class, strlen($prefix));
 
     if (str_starts_with($relativeClass, 'Config\\')) {
-        $file = __DIR__ . '/../config/' . str_replace('\\', '/', substr($relativeClass, 7)) . '.php';
+        $relPath = str_replace('\\', '/', substr($relativeClass, 7));
+        $file = __DIR__ . '/../config/' . $relPath . '.php';
+        if (!file_exists($file)) {
+            $lowerFile = __DIR__ . '/../config/' . strtolower($relPath) . '.php';
+            if (file_exists($lowerFile)) {
+                $file = $lowerFile;
+            }
+        }
     } else {
         $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
     }
@@ -33,25 +40,33 @@ spl_autoload_register(function ($class) {
     }
 });
 
-// Resolução de Rota
+// Resolução de Rota (compatível com raiz do domínio ou subpastas como /reqmaster/)
 $route = '';
 if (isset($_GET['route'])) {
-    $route = trim($_GET['route'], '/');
+    $route = trim((string)$_GET['route'], '/');
 } else {
-    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-    $scriptName = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
 
-    if ($scriptName !== '/' && $scriptName !== '\\' && str_starts_with($uri, $scriptName)) {
-        $uri = substr($uri, strlen($scriptName));
+    if ($scriptDir !== '/' && $scriptDir !== '\\' && $scriptDir !== '') {
+        if (str_starts_with($uri, $scriptDir)) {
+            $uri = substr($uri, strlen($scriptDir));
+        } else {
+            $parentDir = str_replace('\\', '/', dirname($scriptDir));
+            if ($parentDir !== '/' && $parentDir !== '\\' && $parentDir !== '' && str_starts_with($uri, $parentDir)) {
+                $uri = substr($uri, strlen($parentDir));
+            }
+        }
     }
     $route = trim($uri, '/');
 }
 
 $GLOBALS['current_route'] = $route;
 
-// Se não estiver configurado e não estiver acessando /install, redireciona para o instalador
-if (!file_exists($dbConfigFile) && is_dir($installDir) && $route !== 'install') {
-    header("Location: " . url('install'));
+// Se não estiver configurado, redireciona diretamente para a pasta /install na raiz do projeto
+if (!file_exists($dbConfigFile) && is_dir($installDir)) {
+    $target = function_exists('install_url') ? install_url() : '../install/';
+    header("Location: " . $target);
     exit;
 }
 
@@ -133,7 +148,8 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'install_deleted') {
     flash('success', 'Pasta de instalação removida com sucesso para a segurança do sistema!');
 }
 
-match ($route) {
+try {
+    match ($route) {
     '', 'dashboard' => (new DashboardController())->index(),
     'login' => (new AuthController())->login(),
     '2fa' => (new AuthController())->verify2fa(),
@@ -147,11 +163,13 @@ match ($route) {
     'licenciamento' => (new LicenseController())->index(),
     'licenciamento/ativar' => (new LicenseController())->activate(),
 
-    // Instalador Automatizado
+    // Instalador Automatizado (redireciona para a pasta /install real na raiz)
     'install' => (function() {
         $installer = __DIR__ . '/../install/index.php';
         if (file_exists($installer)) {
-            require_once $installer;
+            $target = function_exists('install_url') ? install_url() : '../install/';
+            header("Location: " . $target);
+            exit;
         } else {
             flash('info', 'A pasta de instalação já foi removida.');
             redirect('login');
@@ -251,4 +269,16 @@ match ($route) {
         </div>';
         require __DIR__ . '/../views/layout/footer.php';
     })(),
-};
+    };
+} catch (\Throwable $e) {
+    error_log('[ReqMaster Fatal] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    http_response_code(500);
+    echo '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Erro Interno - ReqMaster</title></head>'
+       . '<body style="font-family:sans-serif;background:#0f172a;color:#f8fafc;padding:40px 20px;margin:0;">'
+       . '<div style="max-width:680px;margin:0 auto;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:28px;">'
+       . '<h1 style="margin:0 0 8px;font-size:20px;color:#fda4af;">Erro ao Carregar o Sistema (HTTP 500)</h1>'
+       . '<p style="margin:0 0 14px;font-size:13px;color:#cbd5e1;">Verifique os detalhes técnicos abaixo e as permissões das pastas <code>config/</code> e <code>public/uploads/</code> no servidor:</p>'
+       . '<pre style="background:#020617;border:1px solid #334155;border-radius:10px;padding:14px;font-size:12px;color:#f87171;white-space:pre-wrap;word-break:break-word;">'
+       . htmlspecialchars($e->getMessage() . "\n" . basename($e->getFile()) . ':' . $e->getLine(), ENT_QUOTES, 'UTF-8')
+       . '</pre></div></body></html>';
+}

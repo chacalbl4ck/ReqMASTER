@@ -46,7 +46,7 @@ class Database
             } catch (PDOException $e) {
                 // Verifica se a pasta install ainda existe para sugerir o setup automatizado
                 $installExists = is_dir(__DIR__ . '/../install');
-                $installUrl = defined('BASE_URL') ? url('install') : '../install/index.php';
+                $installUrl = function_exists('install_url') ? install_url() : '../install/';
 
                 die("<div style='font-family:Segoe UI,sans-serif;max-width:620px;margin:50px auto;padding:28px;border:1px solid #fca5a5;border-radius:16px;background:#fff;color:#1e293b;box-shadow:0 10px 25px rgba(0,0,0,0.08);'>
                     <div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;'>

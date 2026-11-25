@@ -10,6 +10,7 @@ error_reporting(E_ALL & ~E_DEPRECATED);
 ini_set('display_errors', '1');
 
 $configFile = __DIR__ . '/../config/db_config.php';
+$configLockFile = __DIR__ . '/../config/.installed.lock';
 $lockFile = __DIR__ . '/installed.lock';
 $databaseSqlFile = __DIR__ . '/../database.sql';
 
@@ -37,10 +38,8 @@ $parsedPath = parse_url($requestUri, PHP_URL_PATH) ?? '/';
 $basePath = preg_replace('/\/install(\/index\.php)?.*$/i', '', $parsedPath);
 $basePath = rtrim($basePath, '/');
 
-if (str_contains($parsedPath, '/public/install')) {
-    if (!str_ends_with($basePath, '/public')) {
-        $basePath .= '/public';
-    }
+if (!str_ends_with($basePath, '/public') && is_dir(dirname(__DIR__) . '/public')) {
+    $basePath .= '/public';
 }
 
 $baseAppUrl = rtrim($protocol . $host . $basePath, '/');
@@ -87,8 +86,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete_install') {
         $dirRemoved = true;
     }
 
-    header("Location: " . $loginUrl . (str_contains($loginUrl, '?') ? '&' : '?') . "msg=install_deleted");
-    exit;
+    if ($dirRemoved) {
+        header("Location: " . $loginUrl . (str_contains($loginUrl, '?') ? '&' : '?') . "msg=install_deleted");
+        exit;
+    }
+
+    $deleteWarning = "Sem permissão do servidor web para remover a pasta '{$installDir}' automaticamente. Execute no terminal do servidor: sudo rm -rf " . $installDir;
 }
 
 // Verificação de requisitos do sistema
@@ -102,10 +105,10 @@ $sqlExists = file_exists($databaseSqlFile);
 $canInstall = $phpVersionOk && $pdoLoaded && $pdoMysqlLoaded && $opensslLoaded && $configWritable && $sqlExists;
 
 $step = 'form';
-$errorMessage = '';
+$errorMessage = $deleteWarning ?? '';
 $successData = null;
 
-if (file_exists($lockFile) && !isset($_POST['install_submit'])) {
+if (file_exists($configFile) && (file_exists($configLockFile) || file_exists($lockFile)) && !isset($_POST['install_submit'])) {
     $step = 'already_installed';
 }
 
@@ -244,10 +247,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_submit'])) {
                 . "    'installed_at' => " . var_export(date('Y-m-d H:i:s'), true) . ",\n"
                 . "];\n";
 
-            file_put_contents($configFile, $configPhp, LOCK_EX);
+            if (@file_put_contents($configFile, $configPhp, LOCK_EX) === false) {
+                throw new Exception("Não foi possível gravar config/db_config.php. Verifique as permissões de escrita na pasta config/.");
+            }
 
-            // 7. Cria trava de instalação
-            file_put_contents($lockFile, "Installed on " . date('c'), LOCK_EX);
+            // 7. Cria trava de instalação na pasta config/ (sempre gravável) e opcionalmente em install/ sem emitir warning
+            @file_put_contents($configLockFile, "Installed on " . date('c'), LOCK_EX);
+            if (is_writable(__DIR__)) {
+                @file_put_contents($lockFile, "Installed on " . date('c'), LOCK_EX);
+            }
 
             $step = 'success';
             $successData = [

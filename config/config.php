@@ -48,6 +48,15 @@ function url(string $path = ''): string
     return BASE_URL . ($path ? '/' . $path : '');
 }
 
+function install_url(): string
+{
+    $base = BASE_URL;
+    if (str_ends_with($base, '/public')) {
+        $base = substr($base, 0, -7);
+    }
+    return rtrim($base, '/') . '/install/';
+}
+
 function cert_auth_url(array $settings = []): string
 {
     $custom = trim((string)($settings['mtls_url'] ?? ''));
@@ -85,12 +94,19 @@ function current_route(): string
         return $GLOBALS['current_route'];
     }
     if (isset($_GET['route'])) {
-        return trim($_GET['route'], '/');
+        return trim((string)$_GET['route'], '/');
     }
-    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-    $scriptName = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-    if ($scriptName !== '/' && $scriptName !== '\\' && $scriptName !== '' && str_starts_with($uri, $scriptName)) {
-        $uri = substr($uri, strlen($scriptName));
+    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+    if ($scriptDir !== '/' && $scriptDir !== '\\' && $scriptDir !== '') {
+        if (str_starts_with($uri, $scriptDir)) {
+            $uri = substr($uri, strlen($scriptDir));
+        } else {
+            $parentDir = str_replace('\\', '/', dirname($scriptDir));
+            if ($parentDir !== '/' && $parentDir !== '\\' && $parentDir !== '' && str_starts_with($uri, $parentDir)) {
+                $uri = substr($uri, strlen($parentDir));
+            }
+        }
     }
     return trim($uri, '/');
 }
@@ -317,4 +333,35 @@ function is_certificate_signature(?string $sig): bool
         return true;
     }
     return false;
+}
+
+// Fallbacks seguros caso a extensão php-mbstring não esteja habilitada no servidor Linux
+if (!function_exists('mb_substr')) {
+    function mb_substr(string $string, int $start, ?int $length = null, ?string $encoding = null): string
+    {
+        return $length === null ? substr($string, $start) : substr($string, $start, $length);
+    }
+}
+if (!function_exists('mb_strlen')) {
+    function mb_strlen(string $string, ?string $encoding = null): int
+    {
+        return strlen($string);
+    }
+}
+if (!function_exists('mb_strtoupper')) {
+    function mb_strtoupper(string $string, ?string $encoding = null): string
+    {
+        return strtoupper($string);
+    }
+}
+if (!function_exists('mb_strimwidth')) {
+    function mb_strimwidth(string $string, int $start, int $width, string $trim_marker = '', ?string $encoding = null): string
+    {
+        $slice = substr($string, $start);
+        if (strlen($slice) <= $width) {
+            return $slice;
+        }
+        $cut = max(0, $width - strlen($trim_marker));
+        return substr($slice, 0, $cut) . $trim_marker;
+    }
 }
