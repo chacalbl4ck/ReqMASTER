@@ -11,12 +11,18 @@ require __DIR__ . '/../layout/header.php';
             <p class="text-xs sm:text-sm text-slate-500">Análise de gastos em materiais, serviços, fornecedores e contratos.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <a href="<?= url('relatorios/manutencoes') ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-sm font-semibold transition">
-                <i class="fas fa-wrench"></i> Relatório de Manutenções & Reparos
+            <a href="<?= url('relatorios/manutencoes') ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-semibold transition">
+                <i class="fas fa-wrench"></i> Manutenções & Subprodutos
+            </a>
+            <a href="<?= url('relatorios/odometros') ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-semibold transition">
+                <i class="fas fa-gauge-high"></i> Registro de Odômetros
+            </a>
+            <a href="<?= url('relatorios/veiculos-consumo') ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-semibold transition">
+                <i class="fas fa-gas-pump"></i> Uso, Manutenção & Km/L
             </a>
             <!-- Botão de Exportação CSV para Excel -->
-            <a href="<?= url('relatorios/exportar-csv?' . http_build_query($filters)) ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
-                <i class="fas fa-file-excel"></i> Exportar para Excel (CSV)
+            <a href="<?= url('relatorios/exportar-csv?' . http_build_query($filters)) ?>" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition">
+                <i class="fas fa-file-excel"></i> Exportar Geral (CSV)
             </a>
         </div>
     </div>

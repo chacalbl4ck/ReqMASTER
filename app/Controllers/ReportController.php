@@ -111,6 +111,8 @@ class ReportController
         $productModel = new Product();
         $filters = [
             'product_id'       => $_GET['product_id'] ?? '',
+            'subitem_name'     => $_GET['subitem_name'] ?? '',
+            'overdue_status'   => $_GET['overdue_status'] ?? '',
             'maintenance_type' => $_GET['maintenance_type'] ?? '',
             'status'           => $_GET['status'] ?? '',
             'date_from'        => $_GET['date_from'] ?? '',
@@ -118,7 +120,9 @@ class ReportController
         ];
 
         $records = $productModel->getMaintenanceReport($filters);
+        $productStatuses = $productModel->getProductMaintenanceStatusList($filters);
         $products = $productModel->all(false);
+        $subitemNames = $productModel->getAllSubitemNames();
         $overdueProducts = $productModel->getOverdueMaintenance();
 
         $totalOrders = count($records);
@@ -141,6 +145,8 @@ class ReportController
         $productModel = new Product();
         $filters = [
             'product_id'       => $_GET['product_id'] ?? '',
+            'subitem_name'     => $_GET['subitem_name'] ?? '',
+            'overdue_status'   => $_GET['overdue_status'] ?? '',
             'maintenance_type' => $_GET['maintenance_type'] ?? '',
             'status'           => $_GET['status'] ?? '',
             'date_from'        => $_GET['date_from'] ?? '',
@@ -157,16 +163,17 @@ class ReportController
 
         fputcsv($output, [
             'Código OS',
-            'Produto / Equipamento',
-            'Número de Série',
+            'Produto / Equipamento / Veículo',
+            'Placa / Série',
+            'Situação Preventiva',
             'Tipo de Manutenção',
             'Título da Solicitação',
             'Prestador / Fornecedor',
             'Solicitante',
-            'Status',
+            'Status OS',
             'Data Solicitação',
             'Data Conclusão',
-            'Última Manutenção do Produto',
+            'Última Manutenção',
             'Valor Total (R$)'
         ], ';');
 
@@ -174,7 +181,8 @@ class ReportController
             fputcsv($output, [
                 $r['code'],
                 $r['product_name'],
-                $r['serial_number'] ?: '-',
+                !empty($r['license_plate']) ? $r['license_plate'] : ($r['serial_number'] ?: '-'),
+                !empty($r['product_is_overdue']) ? 'Manutenção Atrasada' : 'Em Dia',
                 ($r['maintenance_type'] ?? 'reparo') === 'preventiva' ? 'Manutenção Preventiva' : 'Reparo / Corretiva',
                 $r['title'],
                 $r['supplier_name'] ?? '-',
@@ -184,6 +192,142 @@ class ReportController
                 !empty($r['completed_at']) ? formatDate($r['completed_at']) : '-',
                 !empty($r['last_maintenance_at']) ? formatDate($r['last_maintenance_at']) : '-',
                 !empty($r['has_values']) ? number_format((float)$r['total_amount'], 2, ',', '.') : 'Sem valor'
+            ], ';');
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    public function odometers(): void
+    {
+        $productModel = new Product();
+        $filters = [
+            'product_id'    => $_GET['product_id'] ?? '',
+            'license_plate' => $_GET['license_plate'] ?? '',
+            'date_from'     => $_GET['date_from'] ?? '',
+            'date_to'       => $_GET['date_to'] ?? '',
+        ];
+        $records = $productModel->getOdometerReport($filters);
+        $vehicles = $productModel->getVehicles(false);
+
+        $totalDeltaKm = 0;
+        $totalLiters = 0.0;
+        foreach ($records as $rec) {
+            if ($rec['km_delta'] !== null) {
+                $totalDeltaKm += (int)$rec['km_delta'];
+            }
+            $totalLiters += (float)($rec['fuel_liters'] ?? 0);
+        }
+
+        require __DIR__ . '/../../views/reports/odometers.php';
+    }
+
+    public function exportOdometersCsv(): void
+    {
+        $productModel = new Product();
+        $filters = [
+            'product_id'    => $_GET['product_id'] ?? '',
+            'license_plate' => $_GET['license_plate'] ?? '',
+            'date_from'     => $_GET['date_from'] ?? '',
+            'date_to'       => $_GET['date_to'] ?? '',
+        ];
+        $records = $productModel->getOdometerReport($filters);
+
+        $filename = 'relatorio_odometros_' . date('Ymd_His') . '.csv';
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($output, [
+            'Data/Hora Leitura',
+            'Veículo',
+            'Placa',
+            'Chassi',
+            'Quilometragem (Km)',
+            'Km Rodados desde Leitura Anterior',
+            'Litros Abastecidos',
+            'Registrado Por',
+            'Observações'
+        ], ';');
+
+        foreach ($records as $r) {
+            fputcsv($output, [
+                formatDateTime($r['recorded_at']),
+                $r['product_name'],
+                $r['license_plate'] ?: '-',
+                $r['chassis'] ?: '-',
+                (int)$r['mileage_km'],
+                $r['km_delta'] !== null ? (int)$r['km_delta'] : '-',
+                !empty($r['fuel_liters']) ? number_format((float)$r['fuel_liters'], 2, ',', '.') : '-',
+                $r['user_name'] ?? 'Sistema',
+                $r['notes'] ?? '-'
+            ], ';');
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    public function vehicleUsage(): void
+    {
+        $productModel = new Product();
+        $filters = [
+            'product_id' => $_GET['product_id'] ?? '',
+            'date_from'  => $_GET['date_from'] ?? '',
+            'date_to'    => $_GET['date_to'] ?? '',
+        ];
+        $vehicles = $productModel->getVehicles(false);
+        $usageList = $productModel->getVehicleUsageAndFuelReport($filters);
+
+        require __DIR__ . '/../../views/reports/vehicle_usage.php';
+    }
+
+    public function exportVehicleUsageCsv(): void
+    {
+        $productModel = new Product();
+        $filters = [
+            'product_id' => $_GET['product_id'] ?? '',
+            'date_from'  => $_GET['date_from'] ?? '',
+            'date_to'    => $_GET['date_to'] ?? '',
+        ];
+        $usageList = $productModel->getVehicleUsageAndFuelReport($filters);
+
+        $filename = 'relatorio_uso_consumo_veiculos_' . date('Ymd_His') . '.csv';
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($output, [
+            'Veículo',
+            'Placa',
+            'Leituras Odômetro',
+            'Km Inicial',
+            'Km Final',
+            'Km Percorridos',
+            'Total Litros (Abastecimentos/Requisições)',
+            'Média Consumo (Km/L)',
+            'Necessidade de Manutenção',
+            'Subprodutos Vencidos'
+        ], ';');
+
+        foreach ($usageList as $u) {
+            $subNames = array_map(fn($s) => $s['name'] . ' (' . $s['overdue_label'] . ')', $u['overdue_subitems'] ?? []);
+            fputcsv($output, [
+                $u['name'],
+                $u['license_plate'] ?: '-',
+                (int)$u['readings_count'],
+                $u['initial_km'] !== null ? (int)$u['initial_km'] : '-',
+                $u['final_km'] !== null ? (int)$u['final_km'] : '-',
+                (int)$u['km_driven'],
+                number_format((float)$u['total_liters'], 2, ',', '.'),
+                $u['km_per_liter'] !== null ? number_format((float)$u['km_per_liter'], 2, ',', '.') : 'Sem base',
+                !empty($u['needs_maintenance']) ? 'Sim - Manutenção Necessária' : 'Em Dia',
+                !empty($subNames) ? implode(' | ', $subNames) : 'Nenhum'
             ], ';');
         }
 

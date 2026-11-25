@@ -96,6 +96,14 @@ $counts = $metrics['counts'];
                                     &bull; Excedido em <strong><?= number_format(max(0, $kmOverdue), 0, ',', '.') ?> km</strong>
                                 </div>
                             <?php endif; ?>
+                            <?php if (!empty($op['overdue_subitems'])): ?>
+                                <div class="mt-2 p-2 rounded-lg bg-rose-50 border border-rose-200 text-[11px] text-rose-900">
+                                    <strong class="block"><i class="fas fa-oil-can mr-1"></i>Subprodutos no prazo de troca:</strong>
+                                    <?php foreach ($op['overdue_subitems'] as $osub): ?>
+                                        <span class="inline-block mr-2">&bull; <strong><?= htmlspecialchars($osub['name']) ?></strong> (<?= htmlspecialchars($osub['overdue_label']) ?>)</span>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                             <div class="flex items-center gap-2">

@@ -329,29 +329,46 @@ require __DIR__ . '/../layout/header.php';
     function toggleKmNotice() {
         const isVeh = document.getElementById('prodIsVehicle').checked;
         const kmVal = parseInt(document.getElementById('prodIntervalKm').value || '0', 10);
-        document.getElementById('kmTrackingNotice').classList.toggle('hidden', !(isVeh && kmVal > 0));
+        let hasSubKm = false;
+        document.querySelectorAll('input[name="subitem_interval_km[]"]').forEach(el => {
+            if (parseInt(el.value || '0', 10) > 0) hasSubKm = true;
+        });
+        document.getElementById('kmTrackingNotice').classList.toggle('hidden', !(isVeh && (kmVal > 0 || hasSubKm)));
     }
 
-    function addVehicleSubitemRow(name = '', notes = '') {
+    function addVehicleSubitemRow(name = '', intervalKm = '', lastKm = '', notes = '') {
         const container = document.getElementById('vehicleSubitemsContainer');
         const row = document.createElement('div');
-        row.className = 'grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-white p-2 rounded-xl border border-slate-200';
+        row.className = 'grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-xl border border-slate-200';
         row.innerHTML = `
-            <div class="sm:col-span-5">
-                <input type="text" name="subitem_name[]" placeholder="Ex: Óleo 5W30, Filtro de ar, Gasolina" class="w-full text-xs rounded-lg">
+            <div class="sm:col-span-4">
+                <label class="block text-[10px] font-semibold text-slate-400 uppercase mb-0.5">Subproduto</label>
+                <input type="text" name="subitem_name[]" placeholder="Ex: Óleo, Filtro, Gasolina" class="w-full text-xs rounded-lg">
             </div>
-            <div class="sm:col-span-6">
-                <input type="text" name="subitem_notes[]" placeholder="Especificação / Qtd / Observação (opcional)" class="w-full text-xs rounded-lg">
+            <div class="sm:col-span-2">
+                <label class="block text-[10px] font-semibold text-slate-400 uppercase mb-0.5">Km Manut.</label>
+                <input type="number" name="subitem_interval_km[]" min="1" oninput="toggleKmNotice()" placeholder="Opc. (herda)" class="w-full text-xs rounded-lg font-mono">
             </div>
-            <div class="sm:col-span-1 text-right">
-                <button type="button" onclick="this.closest('.grid').remove()" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Remover">
+            <div class="sm:col-span-2">
+                <label class="block text-[10px] font-semibold text-slate-400 uppercase mb-0.5">Últ. Troca Km</label>
+                <input type="number" name="subitem_last_km[]" min="0" placeholder="Opcional" class="w-full text-xs rounded-lg font-mono">
+            </div>
+            <div class="sm:col-span-3">
+                <label class="block text-[10px] font-semibold text-slate-400 uppercase mb-0.5">Observações</label>
+                <input type="text" name="subitem_notes[]" placeholder="Marca / Ref / Qtd" class="w-full text-xs rounded-lg">
+            </div>
+            <div class="sm:col-span-1 text-right pt-3">
+                <button type="button" onclick="this.closest('.grid').remove(); toggleKmNotice();" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Remover">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </div>
         `;
         row.querySelector('input[name="subitem_name[]"]').value = name;
-        row.querySelector('input[name="subitem_notes[]"]').value = notes;
+        row.querySelector('input[name="subitem_interval_km[]"]').value = intervalKm || '';
+        row.querySelector('input[name="subitem_last_km[]"]').value = (lastKm !== null && lastKm !== undefined) ? lastKm : '';
+        row.querySelector('input[name="subitem_notes[]"]').value = notes || '';
         container.appendChild(row);
+        toggleKmNotice();
     }
 
     function openProductModal() {
@@ -395,7 +412,12 @@ require __DIR__ . '/../layout/header.php';
         const container = document.getElementById('vehicleSubitemsContainer');
         container.innerHTML = '';
         if (Array.isArray(p.subitems) && p.subitems.length > 0) {
-            p.subitems.forEach(s => addVehicleSubitemRow(s.name || '', s.notes || ''));
+            p.subitems.forEach(s => addVehicleSubitemRow(
+                s.name || '',
+                s.maintenance_interval_km || '',
+                s.last_maintenance_km !== null && s.last_maintenance_km !== undefined ? s.last_maintenance_km : '',
+                s.notes || ''
+            ));
         }
 
         toggleVehicleFields();

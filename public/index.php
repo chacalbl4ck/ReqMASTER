@@ -221,6 +221,7 @@ try {
     'produtos/foto/excluir' => (new CatalogController())->deleteProductPhoto(),
     'produtos/status' => (new CatalogController())->toggleProductStatus(),
     'produtos/excluir' => (new CatalogController())->deleteProduct(),
+    'produtos/subitem/manutencao' => (new CatalogController())->recordSubitemMaintenance(),
     'servicos' => (new CatalogController())->services(),
     'servicos/salvar' => (new CatalogController())->saveService(),
     'servicos/status' => (new CatalogController())->toggleServiceStatus(),
@@ -250,6 +251,10 @@ try {
     'relatorios/exportar-csv' => (new ReportController())->exportCsv(),
     'relatorios/manutencoes' => (new ReportController())->maintenance(),
     'relatorios/manutencoes-csv' => (new ReportController())->exportMaintenanceCsv(),
+    'relatorios/odometros' => (new ReportController())->odometers(),
+    'relatorios/odometros-csv' => (new ReportController())->exportOdometersCsv(),
+    'relatorios/veiculos-consumo' => (new ReportController())->vehicleUsage(),
+    'relatorios/veiculos-consumo-csv' => (new ReportController())->exportVehicleUsageCsv(),
 
     // Centros de Custo
     'centros-de-custo' => (new CostCenterController())->index(),

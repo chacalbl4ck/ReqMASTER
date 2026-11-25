@@ -130,23 +130,29 @@ require __DIR__ . '/../layout/header.php';
                     <?= csrf_field() ?>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Veículo <span class="text-rose-500">*</span></label>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Veículo (Placa / Nome) <span class="text-rose-500">*</span></label>
                         <select name="product_id" id="mileageVehicleSelect" required onchange="updateKmHint()" class="w-full text-sm rounded-xl">
-                            <option value="">-- Selecione o Veículo --</option>
+                            <option value="">-- Selecione o Veículo pela Placa --</option>
                             <?php foreach ($vehicles as $v): ?>
                                 <option value="<?= (int)$v['id'] ?>"
                                         data-current-km="<?= $v['current_km'] !== null ? (int)$v['current_km'] : '' ?>"
                                         <?= $selectedProductId === (int)$v['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($v['name']) ?><?= !empty($v['license_plate']) ? ' • ' . htmlspecialchars($v['license_plate']) : '' ?>
+                                    <?= !empty($v['license_plate']) ? '[' . htmlspecialchars($v['license_plate']) . '] ' : '[Sem Placa] ' ?><?= htmlspecialchars($v['name']) ?><?= $v['current_km'] !== null ? ' • ' . number_format((int)$v['current_km'], 0, ',', '.') . ' km' : '' ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                         <p id="currentKmHint" class="text-[11px] text-indigo-600 font-semibold mt-1 hidden"></p>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Quilometragem Atual (Km) <span class="text-rose-500">*</span></label>
-                        <input type="number" name="mileage_km" id="mileageKmInput" min="0" required class="w-full text-sm rounded-xl font-mono" placeholder="Ex: 52340">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Quilometragem Atual (Km) <span class="text-rose-500">*</span></label>
+                            <input type="number" name="mileage_km" id="mileageKmInput" min="0" required class="w-full text-sm rounded-xl font-mono" placeholder="Ex: 52340">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Litros Abastecidos (Opcional)</label>
+                            <input type="number" name="fuel_liters" step="0.01" min="0" class="w-full text-sm rounded-xl font-mono" placeholder="Ex: 42.50 (p/ Km/L)">
+                        </div>
                     </div>
 
                     <div>
@@ -222,6 +228,9 @@ require __DIR__ . '/../layout/header.php';
                                         </td>
                                         <td class="py-3 px-4 text-right font-mono font-bold text-indigo-700">
                                             <?= number_format((int)$ml['mileage_km'], 0, ',', '.') ?> km
+                                            <?php if (!empty($ml['fuel_liters'])): ?>
+                                                <span class="block text-[10px] text-emerald-700 font-semibold">+<?= number_format((float)$ml['fuel_liters'], 2, ',', '.') ?> L</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td class="py-3 px-4 text-center">
                                             <?php if (!empty($ml['odometer_photo']) && file_exists(__DIR__ . '/../../public/' . $ml['odometer_photo'])): ?>

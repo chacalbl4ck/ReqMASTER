@@ -54,8 +54,9 @@ class Security
         $user = self::getUser();
         if (!$user) return false;
 
-        $roles = (array)$roles;
-        return in_array($user['role'], $roles, true);
+        $userRole = strtolower(trim((string)($user['role'] ?? '')));
+        $roles = array_map(fn($r) => strtolower(trim((string)$r)), (array)$roles);
+        return $userRole !== '' && in_array($userRole, $roles, true);
     }
 
     public static function requireRole(array|string $roles): void

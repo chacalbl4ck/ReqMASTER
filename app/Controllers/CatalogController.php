@@ -68,15 +68,21 @@ class CatalogController
         $active = isset($_POST['active']) ? 1 : ($id === 0 ? 1 : 0);
 
         $subNames = $_POST['subitem_name'] ?? [];
+        $subIntervals = $_POST['subitem_interval_km'] ?? [];
+        $subLastKms = $_POST['subitem_last_km'] ?? [];
         $subNotes = $_POST['subitem_notes'] ?? [];
         $subitems = [];
         if ($isVehicle && is_array($subNames)) {
             foreach ($subNames as $idx => $sName) {
                 $sName = trim((string)$sName);
                 if ($sName === '') continue;
+                $sInt = trim((string)($subIntervals[$idx] ?? ''));
+                $sLast = trim((string)($subLastKms[$idx] ?? ''));
                 $subitems[] = [
-                    'name'  => $sName,
-                    'notes' => trim((string)($subNotes[$idx] ?? '')),
+                    'name'                    => $sName,
+                    'maintenance_interval_km' => $sInt !== '' ? (int)$sInt : null,
+                    'last_maintenance_km'     => $sLast !== '' ? (int)$sLast : null,
+                    'notes'                   => trim((string)($subNotes[$idx] ?? '')),
                 ];
             }
         }
@@ -335,26 +341,62 @@ class CatalogController
 
         $user = Security::getUser();
         $userId = (int)($user['id'] ?? 0);
+        $fuelRaw = str_replace(',', '.', trim((string)($_POST['fuel_liters'] ?? '')));
+        $fuelLiters = ($fuelRaw !== '' && is_numeric($fuelRaw) && (float)$fuelRaw > 0) ? (float)$fuelRaw : null;
 
-        $this->productModel->recordMileage($productId, $userId, $mileageKm, $photoPath, $notes, $recordedAt);
+        $this->productModel->recordMileage($productId, $userId, $mileageKm, $photoPath, $notes, $recordedAt, $fuelLiters);
 
         $plateStr = !empty($vehicle['license_plate']) ? " ({$vehicle['license_plate']})" : '';
+        $fuelLogStr = $fuelLiters ? " (+ {$fuelLiters} L abastecidos)" : '';
         $this->logModel->log(
             'Quilometragem Registrada',
-            "Odômetro do veículo '{$vehicle['name']}'{$plateStr} atualizado para " . number_format($mileageKm, 0, ',', '.') . " km."
+            "Odômetro do veículo '{$vehicle['name']}'{$plateStr} atualizado para " . number_format($mileageKm, 0, ',', '.') . " km{$fuelLogStr}."
         );
 
         $intervalKm = (int)($vehicle['maintenance_interval_km'] ?? 0);
         $lastMaintKm = (int)($vehicle['last_maintenance_km'] ?? 0);
+        $overdueSubs = $this->productModel->getOverdueSubitems($productId);
+
+        $alerts = [];
         if ($intervalKm > 0 && ($mileageKm - $lastMaintKm) >= $intervalKm) {
             $driven = $mileageKm - $lastMaintKm;
-            flash('warning', "Quilometragem registrada ({$mileageKm} km). ATENÇÃO: o veículo '{$vehicle['name']}' já rodou " . number_format($driven, 0, ',', '.') . " km desde a última manutenção (limite configurado: " . number_format($intervalKm, 0, ',', '.') . " km)!");
+            $alerts[] = "manutenção geral atingida (" . number_format($driven, 0, ',', '.') . " km rodados de " . number_format($intervalKm, 0, ',', '.') . " km)";
+        }
+        if (!empty($overdueSubs)) {
+            $subLabels = array_map(fn($s) => $s['name'] . ' (' . $s['overdue_label'] . ')', $overdueSubs);
+            $alerts[] = "subproduto(s) com manutenção vencida: " . implode(', ', $subLabels);
+        }
+
+        if (!empty($alerts)) {
+            flash('warning', "Quilometragem registrada (" . number_format($mileageKm, 0, ',', '.') . " km). ATENÇÃO em '{$vehicle['name']}': " . implode(' | ', $alerts) . "!");
         } else {
             flash('success', "Quilometragem de " . number_format($mileageKm, 0, ',', '.') . " km registrada para '{$vehicle['name']}'!");
         }
 
         $redirectTo = ($_POST['redirect_to'] ?? '') === 'show' ? "produtos/ver?id={$productId}" : "veiculos/quilometragem?product_id={$productId}";
         redirect($redirectTo);
+    }
+
+    public function recordSubitemMaintenance(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf()) {
+            flash('danger', 'Requisição inválida.');
+            redirect('produtos');
+        }
+
+        $subitemId = (int)($_POST['subitem_id'] ?? 0);
+        $kmInput = trim((string)($_POST['at_km'] ?? ''));
+        $atKm = $kmInput !== '' ? max(0, (int)preg_replace('/\D/', '', $kmInput)) : null;
+
+        $pid = $this->productModel->recordSubitemMaintenance($subitemId, $atKm, date('Y-m-d'));
+        if ($pid) {
+            $this->logModel->log('Manutenção de Subproduto', "Manutenção/troca registrada para o subproduto #{$subitemId} do produto #{$pid}.");
+            flash('success', 'Troca/manutenção do subproduto registrada com sucesso!');
+            redirect("produtos/ver?id={$pid}");
+        }
+
+        flash('danger', 'Subproduto não encontrado.');
+        redirect('produtos');
     }
 
     public function deleteMileageLog(): void

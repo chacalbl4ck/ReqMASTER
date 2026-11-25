@@ -252,6 +252,9 @@ CREATE TABLE `product_subitems` (
   `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `product_id` INT UNSIGNED NOT NULL,
   `name` VARCHAR(200) NOT NULL,
+  `maintenance_interval_km` INT UNSIGNED NULL,
+  `last_maintenance_km` INT UNSIGNED NULL,
+  `last_maintenance_at` DATE NULL,
   `notes` VARCHAR(255) NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT `fk_product_subitems_product` FOREIGN KEY (`product_id`)
@@ -266,6 +269,7 @@ CREATE TABLE `vehicle_mileage_logs` (
   `product_id` INT UNSIGNED NOT NULL,
   `user_id` INT UNSIGNED NULL,
   `mileage_km` INT UNSIGNED NOT NULL,
+  `fuel_liters` DECIMAL(10,2) NULL,
   `odometer_photo` VARCHAR(255) NULL,
   `notes` VARCHAR(255) NULL,
   `recorded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -168,6 +168,9 @@ class Setting extends Model
                     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `product_id` INT UNSIGNED NOT NULL,
                     `name` VARCHAR(200) NOT NULL,
+                    `maintenance_interval_km` INT UNSIGNED NULL,
+                    `last_maintenance_km` INT UNSIGNED NULL,
+                    `last_maintenance_at` DATE NULL,
                     `notes` VARCHAR(255) NULL,
                     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     CONSTRAINT `fk_product_subitems_product` FOREIGN KEY (`product_id`)
@@ -175,12 +178,24 @@ class Setting extends Model
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ");
 
+            $subCols = $this->db->query("SHOW COLUMNS FROM `product_subitems`")->fetchAll(PDO::FETCH_COLUMN);
+            if (!in_array('maintenance_interval_km', $subCols, true)) {
+                $this->db->exec("ALTER TABLE `product_subitems` ADD COLUMN `maintenance_interval_km` INT UNSIGNED NULL AFTER `name`;");
+            }
+            if (!in_array('last_maintenance_km', $subCols, true)) {
+                $this->db->exec("ALTER TABLE `product_subitems` ADD COLUMN `last_maintenance_km` INT UNSIGNED NULL AFTER `maintenance_interval_km`;");
+            }
+            if (!in_array('last_maintenance_at', $subCols, true)) {
+                $this->db->exec("ALTER TABLE `product_subitems` ADD COLUMN `last_maintenance_at` DATE NULL AFTER `last_maintenance_km`;");
+            }
+
             $this->db->exec("
                 CREATE TABLE IF NOT EXISTS `vehicle_mileage_logs` (
                     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `product_id` INT UNSIGNED NOT NULL,
                     `user_id` INT UNSIGNED NULL,
                     `mileage_km` INT UNSIGNED NOT NULL,
+                    `fuel_liters` DECIMAL(10,2) NULL,
                     `odometer_photo` VARCHAR(255) NULL,
                     `notes` VARCHAR(255) NULL,
                     `recorded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -190,6 +205,11 @@ class Setting extends Model
                         REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ");
+
+            $milCols = $this->db->query("SHOW COLUMNS FROM `vehicle_mileage_logs`")->fetchAll(PDO::FETCH_COLUMN);
+            if (!in_array('fuel_liters', $milCols, true)) {
+                $this->db->exec("ALTER TABLE `vehicle_mileage_logs` ADD COLUMN `fuel_liters` DECIMAL(10,2) NULL AFTER `mileage_km`;");
+            }
 
             $this->db->exec("
                 CREATE TABLE IF NOT EXISTS `product_photos` (

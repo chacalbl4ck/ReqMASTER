@@ -144,19 +144,19 @@ $isSystemLocked = ($settings['license_lock_mode'] ?? '0') === '1';
                 <span class="block text-xs font-bold text-slate-600 uppercase">Temas Prontos (1 Clique):</span>
                 <div class="flex flex-wrap gap-2">
                     <button type="button" onclick="applyColorPreset('#4f46e5','#4338ca','#6366f1','#4338ca','#eef2ff','#cbd5e1')" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold flex items-center gap-2 hover:bg-slate-50">
-                        <span class="w-3.5 h-3.5 rounded-full bg-indigo-600"></span> Índigo Padrão
+                        <span class="w-3.5 h-3.5 rounded-full inline-block" style="background-color: #4f46e5 !important;"></span> Índigo Padrão
                     </button>
                     <button type="button" onclick="applyColorPreset('#2563eb','#1d4ed8','#3b82f6','#1d4ed8','#eff6ff','#bfdbfe')" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold flex items-center gap-2 hover:bg-slate-50">
-                        <span class="w-3.5 h-3.5 rounded-full bg-blue-600"></span> Azul Executivo
+                        <span class="w-3.5 h-3.5 rounded-full inline-block" style="background-color: #2563eb !important;"></span> Azul Executivo
                     </button>
                     <button type="button" onclick="applyColorPreset('#059669','#047857','#10b981','#047857','#ecfdf5','#a7f3d0')" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold flex items-center gap-2 hover:bg-slate-50">
-                        <span class="w-3.5 h-3.5 rounded-full bg-emerald-600"></span> Esmeralda
+                        <span class="w-3.5 h-3.5 rounded-full inline-block" style="background-color: #059669 !important;"></span> Esmeralda
                     </button>
                     <button type="button" onclick="applyColorPreset('#0f172a','#1e293b','#334155','#0f172a','#f1f5f9','#cbd5e1')" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold flex items-center gap-2 hover:bg-slate-50">
-                        <span class="w-3.5 h-3.5 rounded-full bg-slate-900"></span> Grafite Corporativo
+                        <span class="w-3.5 h-3.5 rounded-full inline-block" style="background-color: #0f172a !important;"></span> Grafite Corporativo
                     </button>
                     <button type="button" onclick="applyColorPreset('#be123c','#9f1239','#e11d48','#9f1239','#fff1f2','#fecdd3')" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold flex items-center gap-2 hover:bg-slate-50">
-                        <span class="w-3.5 h-3.5 rounded-full bg-rose-700"></span> Rubi Executivo
+                        <span class="w-3.5 h-3.5 rounded-full inline-block" style="background-color: #be123c !important;"></span> Rubi Executivo
                     </button>
                 </div>
             </div>

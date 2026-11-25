@@ -147,14 +147,45 @@ $isOverdue = $isDaysOverdue || $isKmOverdue;
                 <?php else: ?>
                     <ul class="divide-y divide-slate-100 text-xs">
                         <?php foreach ($product['subitems'] as $sub): ?>
-                            <li class="py-2 flex items-start justify-between gap-2">
-                                <div>
-                                    <span class="font-bold text-slate-800 block"><?= htmlspecialchars($sub['name']) ?></span>
-                                    <?php if (!empty($sub['notes'])): ?>
-                                        <span class="text-[11px] text-slate-500"><?= htmlspecialchars($sub['notes']) ?></span>
+                            <li class="py-2.5 flex flex-col gap-1.5">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div>
+                                        <span class="font-bold text-slate-800 block"><?= htmlspecialchars($sub['name']) ?></span>
+                                        <?php if (!empty($sub['notes'])): ?>
+                                            <span class="text-[11px] text-slate-500 block"><?= htmlspecialchars($sub['notes']) ?></span>
+                                        <?php endif; ?>
+                                        <span class="text-[10px] text-slate-500 block mt-0.5">
+                                            <?php if (($sub['rule_source'] ?? '') === 'subitem_km'): ?>
+                                                Regra própria: a cada <strong><?= number_format((int)$sub['effective_interval_km'], 0, ',', '.') ?> km</strong>
+                                            <?php elseif (($sub['rule_source'] ?? '') === 'vehicle_km'): ?>
+                                                Usa Km geral: a cada <strong><?= number_format((int)$sub['effective_interval_km'], 0, ',', '.') ?> km</strong>
+                                            <?php elseif (($sub['rule_source'] ?? '') === 'vehicle_days'): ?>
+                                                Usa prazo em dias: a cada <strong><?= (int)$intervalDays ?> dias</strong>
+                                            <?php else: ?>
+                                                Sem ciclo preventivo configurado
+                                            <?php endif; ?>
+                                            <?php if ($sub['km_elapsed'] !== null): ?>
+                                                &bull; Rodados: <strong><?= number_format((int)$sub['km_elapsed'], 0, ',', '.') ?> km</strong>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                    <?php if (!empty($sub['is_overdue'])): ?>
+                                        <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-bold shrink-0">
+                                            Manutenção Atingida!
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-semibold shrink-0">
+                                            Em dia
+                                        </span>
                                     <?php endif; ?>
                                 </div>
-                                <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-semibold shrink-0">Insumo</span>
+                                <form method="POST" action="<?= url('produtos/subitem/manutencao') ?>" class="flex items-center justify-end gap-1.5">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="subitem_id" value="<?= (int)$sub['id'] ?>">
+                                    <button type="submit" class="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold transition">
+                                        <i class="fas fa-check mr-1"></i> Registrar Troca / Manutenção no Km Atual
+                                    </button>
+                                </form>
                             </li>
                         <?php endforeach; ?>
                     </ul>

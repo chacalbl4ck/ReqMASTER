@@ -55,11 +55,16 @@ $companyName = $allSettings['company_name'] ?? 'ReqMaster';
 <body class="h-full flex flex-col text-slate-800 antialiased">
     <!-- Barra Superior / Topbar -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <!-- Linha 1: Logo Centralizado & Ações/Perfil à Direita -->
+        <!-- Linha 1: Sobre à Esquerda, Logo Centralizado & Ações/Perfil à Direita -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between min-h-[60px] py-2 gap-3">
-                <!-- Espaçador esquerdo (mantém o logo centralizado no desktop) -->
-                <div class="hidden md:flex md:flex-1 items-center"></div>
+                <!-- Link Sobre à esquerda (equilibra e centraliza o logotipo sem quebrar a barra de navegação) -->
+                <div class="hidden md:flex md:flex-1 items-center">
+                    <a href="<?= url('sobre') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('sobre') ? 'bg-indigo-600 text-white font-semibold shadow-sm' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-100 font-medium' ?>">
+                        <i class="fas fa-circle-info text-xs <?= is_active('sobre') ? 'text-white' : 'text-slate-400' ?>"></i>
+                        <span>Sobre o Sistema</span>
+                    </a>
+                </div>
 
                 <!-- Logotipo Centralizado -->
                 <div class="flex items-center justify-start md:justify-center shrink-0">
@@ -110,56 +115,52 @@ $companyName = $allSettings['company_name'] ?? 'ReqMaster';
         <div class="hidden md:block border-t border-slate-100 bg-slate-50/70">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <nav class="flex flex-wrap items-center justify-center gap-1 py-2">
-                    <a href="<?= url() ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                    <a href="<?= url() ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                         <i class="fas fa-chart-pie text-xs <?= is_active('') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Painel</span>
                     </a>
-                    <a href="<?= url('requisicoes') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('requisicoes') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                    <a href="<?= url('requisicoes') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('requisicoes') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                         <i class="fas fa-clipboard-list text-xs <?= is_active('requisicoes') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Requisições</span>
                     </a>
-                    <a href="<?= url('fornecedores') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('fornecedores') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>" title="Fornecedores e Prestadores">
+                    <a href="<?= url('fornecedores') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('fornecedores') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>" title="Fornecedores e Prestadores">
                         <i class="fas fa-building text-xs <?= is_active('fornecedores') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Fornecedores</span>
                     </a>
-                    <a href="<?= url('contratos') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('contratos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                    <a href="<?= url('contratos') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('contratos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                         <i class="fas fa-file-contract text-xs <?= is_active('contratos') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Contratos</span>
                     </a>
-                    <a href="<?= url('produtos') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('produtos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                    <a href="<?= url('produtos') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('produtos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                         <i class="fas fa-boxes text-xs <?= is_active('produtos') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Produtos</span>
                     </a>
-                    <a href="<?= url('veiculos/quilometragem') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('veiculos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                    <a href="<?= url('veiculos/quilometragem') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('veiculos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                         <i class="fas fa-gauge-high text-xs <?= is_active('veiculos') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Quilometragem</span>
                     </a>
-                    <a href="<?= url('servicos') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('servicos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                    <a href="<?= url('servicos') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('servicos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                         <i class="fas fa-wrench text-xs <?= is_active('servicos') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Serviços</span>
                     </a>
-                    <a href="<?= url('centros-de-custo') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('centros-de-custo') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                    <a href="<?= url('centros-de-custo') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('centros-de-custo') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                         <i class="fas fa-sitemap text-xs <?= is_active('centros-de-custo') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Centros de Custo</span>
                     </a>
-                    <a href="<?= url('relatorios') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('relatorios') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                    <a href="<?= url('relatorios') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('relatorios') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                         <i class="fas fa-file-alt text-xs <?= is_active('relatorios') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Relatórios</span>
                     </a>
                     <?php if (\App\Helpers\Security::hasRole(['admin'])): ?>
-                        <a href="<?= url('logs') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('logs') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                        <a href="<?= url('logs') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('logs') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                             <i class="fas fa-clipboard-check text-xs <?= is_active('logs') ? 'text-white' : 'text-slate-400' ?>"></i>
                             <span>Logs</span>
                         </a>
-                        <a href="<?= url('configuracoes') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('configuracoes') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                        <a href="<?= url('configuracoes') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('configuracoes') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                             <i class="fas fa-cog text-xs <?= is_active('configuracoes') ? 'text-white' : 'text-slate-400' ?>"></i>
                             <span>Configurações</span>
                         </a>
                     <?php endif; ?>
-                    <a href="<?= url('sobre') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('sobre') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
-                        <i class="fas fa-circle-info text-xs <?= is_active('sobre') ? 'text-white' : 'text-slate-400' ?>"></i>
-                        <span>Sobre</span>
-                    </a>
                 </nav>
             </div>
         </div>
