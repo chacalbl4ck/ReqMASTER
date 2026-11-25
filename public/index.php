@@ -225,6 +225,9 @@ try {
     'servicos/salvar' => (new CatalogController())->saveService(),
     'servicos/status' => (new CatalogController())->toggleServiceStatus(),
     'servicos/excluir' => (new CatalogController())->deleteService(),
+    'veiculos/quilometragem' => (new CatalogController())->mileage(),
+    'veiculos/quilometragem/salvar' => (new CatalogController())->storeMileage(),
+    'veiculos/quilometragem/excluir' => (new CatalogController())->deleteMileageLog(),
 
     // Configurações Globais
     'configuracoes' => (new SettingController())->index(),

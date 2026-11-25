@@ -47,33 +47,67 @@ $counts = $metrics['counts'];
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
                 <?php foreach ($overdueProducts as $op): ?>
                     <?php
+                        $isDaysLate = !empty($op['is_days_overdue']);
+                        $isKmLate = !empty($op['is_km_overdue']);
                         $daysSince = (int)($op['days_elapsed'] ?? 0);
                         $interval = (int)($op['maintenance_interval_days'] ?? 0);
                         $daysLate = (int)($op['days_overdue'] ?? max(1, $daysSince - $interval));
+                        $kmElapsed = (int)($op['km_elapsed'] ?? 0);
+                        $intervalKm = (int)($op['maintenance_interval_km'] ?? 0);
+                        $kmOverdue = (int)($op['km_overdue'] ?? 0);
                     ?>
                     <div class="bg-white rounded-xl border border-rose-200/80 p-3.5 flex flex-col justify-between gap-2.5 shadow-sm">
                         <div>
                             <div class="flex items-start justify-between gap-2">
                                 <a href="<?= url('produtos/ver?id=' . (int)$op['id']) ?>" class="font-bold text-sm text-slate-900 hover:text-indigo-700 transition">
+                                    <?php if (!empty($op['is_vehicle'])): ?>
+                                        <i class="fas fa-car text-indigo-600 mr-1"></i>
+                                    <?php endif; ?>
                                     <?= htmlspecialchars($op['name']) ?>
                                 </a>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 shrink-0">
-                                    +<?= $daysLate ?>d atraso
-                                </span>
+                                <div class="flex flex-col items-end gap-1 shrink-0">
+                                    <?php if ($isDaysLate): ?>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                                            +<?= $daysLate ?>d atraso
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ($isKmLate): ?>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">
+                                            <?= number_format($kmElapsed, 0, ',', '.') ?> / <?= number_format($intervalKm, 0, ',', '.') ?> km
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                            <?php if (!empty($op['serial_number'])): ?>
+                            <?php if (!empty($op['license_plate'])): ?>
+                                <div class="text-[11px] font-mono text-slate-500 mt-0.5">Placa: <?= htmlspecialchars($op['license_plate']) ?></div>
+                            <?php elseif (!empty($op['serial_number'])): ?>
                                 <div class="text-[11px] font-mono text-slate-500 mt-0.5">N/S: <?= htmlspecialchars($op['serial_number']) ?></div>
                             <?php endif; ?>
-                            <div class="text-xs text-slate-600 mt-1.5">
-                                Última: <strong><?= formatDate($op['last_maintenance_at']) ?></strong>
-                                &bull; Prazo: <strong><?= $interval ?> dias</strong>
-                                (decorridos <?= $daysSince ?>d)
-                            </div>
+                            <?php if ($isDaysLate): ?>
+                                <div class="text-xs text-slate-600 mt-1.5">
+                                    Última: <strong><?= formatDate($op['last_maintenance_at']) ?></strong>
+                                    &bull; Prazo: <strong><?= $interval ?> dias</strong>
+                                    (decorridos <?= $daysSince ?>d)
+                                </div>
+                            <?php endif; ?>
+                            <?php if ($isKmLate): ?>
+                                <div class="text-xs text-slate-600 mt-1">
+                                    Odômetro: <strong><?= number_format((int)$op['current_km'], 0, ',', '.') ?> km</strong>
+                                    &bull; Excedido em <strong><?= number_format(max(0, $kmOverdue), 0, ',', '.') ?> km</strong>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                            <a href="<?= url('produtos/ver?id=' . (int)$op['id']) ?>" class="text-[11px] font-semibold text-slate-600 hover:text-slate-900">
-                                Ver Ficha
-                            </a>
+                            <div class="flex items-center gap-2">
+                                <a href="<?= url('produtos/ver?id=' . (int)$op['id']) ?>" class="text-[11px] font-semibold text-slate-600 hover:text-slate-900">
+                                    Ver Ficha
+                                </a>
+                                <?php if (!empty($op['is_vehicle'])): ?>
+                                    <a href="<?= url('veiculos/quilometragem?product_id=' . (int)$op['id']) ?>" class="text-[11px] font-semibold text-sky-700 hover:underline">
+                                        Registrar Km
+                                    </a>
+                                <?php endif; ?>
+                            </div>
                             <a href="<?= url('requisicoes/nova?type=servico&repair=1&maintenance_type=preventiva&product_id=' . (int)$op['id']) ?>"
                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition">
                                 <i class="fas fa-wrench"></i> Abrir OS Preventiva

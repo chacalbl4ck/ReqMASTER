@@ -112,7 +112,7 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
                             <option value="">-- Selecione um produto cadastrado (opcional) --</option>
                             <?php foreach ($products ?? [] as $prod): ?>
                                 <option value="<?= (int)$prod['id'] ?>" <?= ((int)($preselectedProductId ?? 0) === (int)$prod['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($prod['name']) ?><?= !empty($prod['serial_number']) ? ' • N/S: ' . htmlspecialchars($prod['serial_number']) : '' ?>
+                                    <?= htmlspecialchars($prod['name']) ?><?= !empty($prod['license_plate']) ? ' • Placa: ' . htmlspecialchars($prod['license_plate']) : '' ?><?= !empty($prod['serial_number']) ? ' • N/S: ' . htmlspecialchars($prod['serial_number']) : '' ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

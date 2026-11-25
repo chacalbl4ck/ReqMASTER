@@ -13,6 +13,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS `security_attempts`;
 DROP TABLE IF EXISTS `cost_centers`;
+DROP TABLE IF EXISTS `vehicle_mileage_logs`;
+DROP TABLE IF EXISTS `product_subitems`;
 DROP TABLE IF EXISTS `product_photos`;
 DROP TABLE IF EXISTS `products`;
 DROP TABLE IF EXISTS `services`;
@@ -229,12 +231,48 @@ CREATE TABLE `products` (
   `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(200) NOT NULL,
   `serial_number` VARCHAR(120) NULL,
+  `is_vehicle` TINYINT(1) NOT NULL DEFAULT 0,
+  `chassis` VARCHAR(80) NULL,
+  `license_plate` VARCHAR(20) NULL,
+  `current_km` INT UNSIGNED NULL,
   `notes` TEXT NULL,
   `maintenance_interval_days` INT UNSIGNED NULL,
+  `maintenance_interval_km` INT UNSIGNED NULL,
   `last_maintenance_at` DATE NULL,
+  `last_maintenance_km` INT UNSIGNED NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- 11b. TABELA DE SUBPRODUTOS / INSUMOS DE VEÍCULOS
+-- --------------------------------------------------------
+CREATE TABLE `product_subitems` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `product_id` INT UNSIGNED NOT NULL,
+  `name` VARCHAR(200) NOT NULL,
+  `notes` VARCHAR(255) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_product_subitems_product` FOREIGN KEY (`product_id`)
+    REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- 11c. TABELA DE REGISTRO DE QUILOMETRAGEM DOS VEÍCULOS
+-- --------------------------------------------------------
+CREATE TABLE `vehicle_mileage_logs` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `product_id` INT UNSIGNED NOT NULL,
+  `user_id` INT UNSIGNED NULL,
+  `mileage_km` INT UNSIGNED NOT NULL,
+  `odometer_photo` VARCHAR(255) NULL,
+  `notes` VARCHAR(255) NULL,
+  `recorded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_mileage_product` FOREIGN KEY (`product_id`)
+    REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_mileage_user` FOREIGN KEY (`user_id`)
+    REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

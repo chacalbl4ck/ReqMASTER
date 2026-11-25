@@ -120,18 +120,74 @@ class Setting extends Model
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ");
 
-            // 4d. Tabelas de Produtos/Equipamentos, Fotos de Produtos e Serviços
+            // 4d. Tabelas de Produtos/Equipamentos, Veículos, Fotos e Serviços
             $this->db->exec("
                 CREATE TABLE IF NOT EXISTS `products` (
                     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `name` VARCHAR(200) NOT NULL,
                     `serial_number` VARCHAR(120) NULL,
+                    `is_vehicle` TINYINT(1) NOT NULL DEFAULT 0,
+                    `chassis` VARCHAR(80) NULL,
+                    `license_plate` VARCHAR(20) NULL,
+                    `current_km` INT UNSIGNED NULL,
                     `notes` TEXT NULL,
                     `maintenance_interval_days` INT UNSIGNED NULL,
+                    `maintenance_interval_km` INT UNSIGNED NULL,
                     `last_maintenance_at` DATE NULL,
+                    `last_maintenance_km` INT UNSIGNED NULL,
                     `active` TINYINT(1) NOT NULL DEFAULT 1,
                     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            // Migra colunas de veículo em bases existentes
+            $prodColsStmt = $this->db->query("SHOW COLUMNS FROM `products`");
+            $prodCols = $prodColsStmt->fetchAll(PDO::FETCH_COLUMN);
+            if (!in_array('is_vehicle', $prodCols, true)) {
+                $this->db->exec("ALTER TABLE `products` ADD COLUMN `is_vehicle` TINYINT(1) NOT NULL DEFAULT 0 AFTER `serial_number`;");
+            }
+            if (!in_array('chassis', $prodCols, true)) {
+                $this->db->exec("ALTER TABLE `products` ADD COLUMN `chassis` VARCHAR(80) NULL AFTER `is_vehicle`;");
+            }
+            if (!in_array('license_plate', $prodCols, true)) {
+                $this->db->exec("ALTER TABLE `products` ADD COLUMN `license_plate` VARCHAR(20) NULL AFTER `chassis`;");
+            }
+            if (!in_array('current_km', $prodCols, true)) {
+                $this->db->exec("ALTER TABLE `products` ADD COLUMN `current_km` INT UNSIGNED NULL AFTER `license_plate`;");
+            }
+            if (!in_array('maintenance_interval_km', $prodCols, true)) {
+                $this->db->exec("ALTER TABLE `products` ADD COLUMN `maintenance_interval_km` INT UNSIGNED NULL AFTER `maintenance_interval_days`;");
+            }
+            if (!in_array('last_maintenance_km', $prodCols, true)) {
+                $this->db->exec("ALTER TABLE `products` ADD COLUMN `last_maintenance_km` INT UNSIGNED NULL AFTER `last_maintenance_at`;");
+            }
+
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `product_subitems` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `product_id` INT UNSIGNED NOT NULL,
+                    `name` VARCHAR(200) NOT NULL,
+                    `notes` VARCHAR(255) NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT `fk_product_subitems_product` FOREIGN KEY (`product_id`)
+                        REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `vehicle_mileage_logs` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `product_id` INT UNSIGNED NOT NULL,
+                    `user_id` INT UNSIGNED NULL,
+                    `mileage_km` INT UNSIGNED NOT NULL,
+                    `odometer_photo` VARCHAR(255) NULL,
+                    `notes` VARCHAR(255) NULL,
+                    `recorded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT `fk_mileage_product` FOREIGN KEY (`product_id`)
+                        REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                    CONSTRAINT `fk_mileage_user` FOREIGN KEY (`user_id`)
+                        REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ");
 

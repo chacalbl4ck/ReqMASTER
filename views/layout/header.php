@@ -130,6 +130,10 @@ $companyName = $allSettings['company_name'] ?? 'ReqMaster';
                         <i class="fas fa-boxes text-xs <?= is_active('produtos') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Produtos</span>
                     </a>
+                    <a href="<?= url('veiculos/quilometragem') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('veiculos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
+                        <i class="fas fa-gauge-high text-xs <?= is_active('veiculos') ? 'text-white' : 'text-slate-400' ?>"></i>
+                        <span>Quilometragem</span>
+                    </a>
                     <a href="<?= url('servicos') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('servicos') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-white font-medium' ?>">
                         <i class="fas fa-wrench text-xs <?= is_active('servicos') ? 'text-white' : 'text-slate-400' ?>"></i>
                         <span>Serviços</span>
@@ -167,6 +171,7 @@ $companyName = $allSettings['company_name'] ?? 'ReqMaster';
             <a href="<?= url('fornecedores') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('fornecedores') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Para Quem Solicitar</a>
             <a href="<?= url('contratos') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('contratos') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Contratos</a>
             <a href="<?= url('produtos') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('produtos') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Produtos</a>
+            <a href="<?= url('veiculos/quilometragem') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('veiculos') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Quilometragem</a>
             <a href="<?= url('servicos') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('servicos') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Serviços</a>
             <a href="<?= url('centros-de-custo') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('centros-de-custo') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Centros de Custo</a>
             <a href="<?= url('relatorios') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('relatorios') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Relatórios</a>
