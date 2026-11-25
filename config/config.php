@@ -308,7 +308,7 @@ function statusBadge(string $status): string
 function priorityBadge(string $priority): string
 {
     return match ($priority) {
-        'urgente' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-600 text-white animate-pulse"><i class="fas fa-bolt mr-1"></i> Urgente</span>',
+        'urgente' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-600 text-white"><i class="fas fa-bolt mr-1"></i> Urgente</span>',
         'alta' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200"><i class="fas fa-arrow-up mr-1"></i> Alta</span>',
         'media' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200"><i class="fas fa-equals mr-1"></i> Média</span>',
         'baixa' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"><i class="fas fa-arrow-down mr-1"></i> Baixa</span>',

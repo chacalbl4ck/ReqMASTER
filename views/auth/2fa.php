@@ -10,7 +10,7 @@ $flash = get_flash();
     <?= bot_protection_meta($settings ?? []) ?>
     <?= favicon_tags() ?>
     <title>Verificação em 2 Etapas (2FA) - <?= APP_NAME ?></title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link rel="stylesheet" href="<?= asset('css/tailwind.min.css') . '?v=' . APP_VERSION ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <?= theme_css_vars($settings ?? []) ?>

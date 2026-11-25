@@ -366,6 +366,7 @@ $counts = $metrics['counts'];
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const ctx = document.getElementById('statusChart').getContext('2d');

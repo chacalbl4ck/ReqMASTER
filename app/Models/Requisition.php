@@ -98,6 +98,10 @@ class Requisition extends Model
 
         $sql .= " ORDER BY r.id DESC";
 
+        if (!empty($filters['limit']) && (int)$filters['limit'] > 0) {
+            $sql .= " LIMIT " . (int)$filters['limit'];
+        }
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();

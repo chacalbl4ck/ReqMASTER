@@ -20,7 +20,7 @@
                 </a>
                 <span>PHP <?= PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION ?> &bull; MySQL</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-emerald-50 text-emerald-700 font-medium">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Sistema Ativo
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Sistema Ativo
                 </span>
             </div>
         </div>

@@ -25,8 +25,7 @@ class DashboardController
     public function index(): void
     {
         $metrics = $this->reqModel->getDashboardMetrics();
-        $recentRequisitions = $this->reqModel->all(['search' => '']);
-        $recentRequisitions = array_slice($recentRequisitions, 0, 8); // 8 mais recentes
+        $recentRequisitions = $this->reqModel->all(['search' => '', 'limit' => 8]);
         $expiringContracts = $this->contractModel->getExpiringSoon(60); // próximos 60 dias
         $overdueProducts = $this->productModel->getOverdueMaintenance();
 

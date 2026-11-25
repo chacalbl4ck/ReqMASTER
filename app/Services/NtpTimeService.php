@@ -75,7 +75,7 @@ class NtpTimeService
         $servers = [self::PRIMARY_NTP, self::BACKUP_NTP, self::FALLBACK_NTP];
 
         foreach ($servers as $idx => $host) {
-            $ts = $this->querySingleNtp($host, 3);
+            $ts = $this->querySingleNtp($host, 1);
             if ($ts !== null) {
                 return [
                     'success'       => true,
@@ -139,7 +139,7 @@ class NtpTimeService
         ];
     }
 
-    private function querySingleNtp(string $host, int $timeoutSeconds = 3): ?int
+    private function querySingleNtp(string $host, int $timeoutSeconds = 1): ?int
     {
         $sock = @stream_socket_client("udp://{$host}:123", $errno, $errstr, $timeoutSeconds);
         if (!$sock) {
@@ -239,8 +239,8 @@ class NtpTimeService
             $ch = curl_init($url);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT        => 6,
-                CURLOPT_CONNECTTIMEOUT => 4,
+                CURLOPT_TIMEOUT        => 3,
+                CURLOPT_CONNECTTIMEOUT => 2,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_SSL_VERIFYPEER => true,
                 CURLOPT_HTTPHEADER     => ['User-Agent: ReqMaster-GeoTime/2.0', 'Accept: application/json'],
@@ -258,7 +258,7 @@ class NtpTimeService
         $opts = [
             'http' => [
                 'method'  => 'GET',
-                'timeout' => 6,
+                'timeout' => 3,
                 'header'  => "User-Agent: ReqMaster-GeoTime/2.0\r\nAccept: application/json\r\n",
             ],
         ];

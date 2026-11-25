@@ -56,7 +56,7 @@ if (!empty($pemCert)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title>Autenticação de Certificado Digital - <?= APP_NAME ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/tailwind.min.css?v=<?= APP_VERSION ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4 font-sans">

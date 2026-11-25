@@ -8,8 +8,10 @@ use Exception;
 
 class Setting extends Model
 {
+    private const SCHEMA_VERSION = '20261125_perf_v1';
     private static bool $initialized = false;
     private static array $cache = [];
+    private static ?array $allCache = null;
 
     public function __construct()
     {
@@ -20,6 +22,12 @@ class Setting extends Model
     private function ensureTablesAndColumns(): void
     {
         if (self::$initialized) {
+            return;
+        }
+
+        $versionFile = __DIR__ . '/../../config/vault/schema.ver';
+        if (is_file($versionFile) && trim((string)@file_get_contents($versionFile)) === self::SCHEMA_VERSION) {
+            self::$initialized = true;
             return;
         }
 
@@ -269,9 +277,34 @@ class Setting extends Model
                 }
             }
 
+            // 7. Índices de desempenho para relatórios, dashboard e frota
+            $this->ensureIndex('requisitions', 'idx_req_status_created', '`status`, `created_at`');
+            $this->ensureIndex('requisitions', 'idx_req_linked_prod', '`linked_product_id`');
+            $this->ensureIndex('products', 'idx_prod_veh_active', '`is_vehicle`, `active`');
+            $this->ensureIndex('vehicle_mileage_logs', 'idx_mil_prod_date', '`product_id`, `recorded_at`');
+
+            $vaultDir = dirname($versionFile);
+            if (is_dir($vaultDir) && is_writable($vaultDir)) {
+                @file_put_contents($versionFile, self::SCHEMA_VERSION);
+            }
+
             self::$initialized = true;
         } catch (Exception $e) {
             // Log or ignore if table already exists
+        }
+    }
+
+    private function ensureIndex(string $table, string $indexName, string $columns): void
+    {
+        try {
+            $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+            $safeIndex = preg_replace('/[^a-zA-Z0-9_]/', '', $indexName);
+            $exists = $this->db->query("SHOW INDEX FROM `{$safeTable}` WHERE Key_name = '{$safeIndex}'")->fetch();
+            if (!$exists) {
+                $this->db->exec("ALTER TABLE `{$safeTable}` ADD INDEX `{$safeIndex}` ({$columns});");
+            }
+        } catch (Exception $e) {
+            // Ignora caso a tabela ainda não exista ou não tenha permissão de DDL
         }
     }
 
@@ -279,6 +312,10 @@ class Setting extends Model
     {
         if (isset(self::$cache[$key])) {
             return self::$cache[$key];
+        }
+
+        if (self::$allCache !== null) {
+            return $default;
         }
 
         $stmt = $this->db->prepare("SELECT `value` FROM `settings` WHERE `key_name` = :k LIMIT 1");
@@ -295,12 +332,17 @@ class Setting extends Model
 
     public function getAll(): array
     {
+        if (self::$allCache !== null) {
+            return self::$allCache;
+        }
+
         $stmt = $this->db->query("SELECT `key_name`, `value` FROM `settings`");
         $all = [];
         while ($row = $stmt->fetch()) {
             $all[$row['key_name']] = $row['value'];
             self::$cache[$row['key_name']] = $row['value'];
         }
+        self::$allCache = $all;
         return $all;
     }
 
@@ -317,6 +359,9 @@ class Setting extends Model
             'v2' => $value
         ]);
         self::$cache[$key] = $value;
+        if (self::$allCache !== null) {
+            self::$allCache[$key] = $value;
+        }
     }
 
     public function setMany(array $data): void

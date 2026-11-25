@@ -17,35 +17,14 @@ $companyName = $allSettings['company_name'] ?? 'ReqMaster';
     <?= bot_protection_meta($allSettings) ?>
     <?= favicon_tags() ?>
     <title><?= APP_NAME ?></title>
-    <!-- Tailwind CSS CDN com plugin forms -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                            800: '#3730a3',
-                            900: '#312e81',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind CSS compilado estaticamente (sem JIT no navegador) -->
+    <link rel="stylesheet" href="<?= asset('css/tailwind.min.css') . '?v=' . APP_VERSION ?>">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <?= theme_css_vars($allSettings) ?>
     <style>
         body { font-family: 'Inter', sans-serif; }

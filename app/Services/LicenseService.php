@@ -363,8 +363,8 @@ class LicenseService
             $ch = curl_init($url);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT        => 10,
-                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_TIMEOUT        => 5,
+                CURLOPT_CONNECTTIMEOUT => 3,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_SSL_VERIFYPEER => true,
                 CURLOPT_HTTPHEADER     => [
@@ -388,7 +388,7 @@ class LicenseService
         $opts = [
             'http' => [
                 'method'  => 'GET',
-                'timeout' => 10,
+                'timeout' => 5,
                 'header'  => "User-Agent: ReqMaster-LicenseEngine\r\n"
                            . "Accept: application/vnd.github.raw+json\r\n"
                            . "Authorization: Bearer {$token}\r\n"

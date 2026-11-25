@@ -133,7 +133,9 @@ CREATE TABLE `requisitions` (
   CONSTRAINT `fk_requisitions_contract` FOREIGN KEY (`contract_id`)
     REFERENCES `contracts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_requisitions_approver` FOREIGN KEY (`approved_by`)
-    REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+    REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  KEY `idx_req_status_created` (`status`, `created_at`),
+  KEY `idx_req_linked_prod` (`linked_product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -242,7 +244,8 @@ CREATE TABLE `products` (
   `last_maintenance_km` INT UNSIGNED NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY `idx_prod_veh_active` (`is_vehicle`, `active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -276,7 +279,8 @@ CREATE TABLE `vehicle_mileage_logs` (
   CONSTRAINT `fk_mileage_product` FOREIGN KEY (`product_id`)
     REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_mileage_user` FOREIGN KEY (`user_id`)
-    REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+    REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  KEY `idx_mil_prod_date` (`product_id`, `recorded_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
