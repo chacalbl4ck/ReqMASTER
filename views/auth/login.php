@@ -13,6 +13,7 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?= bot_protection_meta($settings ?? []) ?>
+    <?= favicon_tags() ?>
     <title>Acesso Restrito - <?= APP_NAME ?></title>
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -33,9 +34,7 @@ $logoPhysical = !empty($companyLogo) ? (__DIR__ . '/../../public/' . ltrim($comp
                     <img src="<?= asset($companyLogo) ?>" alt="<?= htmlspecialchars($companyName) ?>" class="max-h-16 max-w-[220px] object-contain">
                 </div>
             <?php else: ?>
-                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 mb-3">
-                    <i class="fas fa-file-invoice text-2xl"></i>
-                </div>
+                <img src="<?= asset('img/reqmaster-logo.png') ?>" alt="ReqMaster" class="w-16 h-16 mx-auto rounded-2xl object-contain bg-white border border-slate-200 p-1 shadow-md mb-3">
                 <h1 class="text-2xl font-bold text-slate-900">Req<span class="text-indigo-600">Master</span></h1>
             <?php endif; ?>
             <p class="text-xs text-slate-500 mt-1">Gestão Integrada de Requisições, Fornecedores & Contratos</p>

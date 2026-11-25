@@ -2,12 +2,23 @@
 
     <!-- Rodapé -->
     <footer class="bg-white border-t border-slate-200 mt-auto py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-2">
-            <div>
-                &copy; <?= date('Y') ?> <strong><?= APP_NAME ?></strong> - Todos os direitos reservados.
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-3">
+            <div class="text-center md:text-left space-y-1">
+                <div>
+                    &copy; 2027 <strong>CRM Soluções em Tecnologia</strong> &bull; <strong>Caio Monteiro</strong> &bull;
+                    <span class="font-bold text-indigo-700">DEUS SEJA LOUVADO</span>
+                </div>
+                <div class="text-[11px] text-slate-400">
+                    Para suporte, enviar e-mail para: <a href="mailto:caiormleo@outlook.com.br" class="text-indigo-600 hover:underline font-medium">caiormleo@outlook.com.br</a>
+                    &bull; WhatsApp: <strong class="text-slate-600">@caior.monteiro</strong>
+                    &bull; GitHub: <a href="https://github.com/chacalbl4ck/reqmaster" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-medium">chacalbl4ck/reqmaster</a>
+                </div>
             </div>
-            <div class="flex items-center gap-4">
-                <span>PHP 8.5 &bull; MySQL</span>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <a href="<?= url('sobre') ?>" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold transition">
+                    <i class="fas fa-circle-info"></i> Sobre o Sistema
+                </a>
+                <span>PHP <?= PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION ?> &bull; MySQL</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-emerald-50 text-emerald-700 font-medium">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Sistema Ativo
                 </span>

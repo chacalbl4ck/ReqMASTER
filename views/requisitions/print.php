@@ -22,6 +22,7 @@ $qrCodeUrl = $qrCodeUrl ?? null;
 <head>
     <meta charset="UTF-8">
     <?= bot_protection_meta($companySettings ?? []) ?>
+    <?= favicon_tags() ?>
     <title>Requisição <?= htmlspecialchars($requisition['code']) ?> - Ficha Oficial</title>
     <!-- html2pdf.js para exportação direta em PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>

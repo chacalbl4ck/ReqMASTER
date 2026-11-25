@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="3"/>
+  <!-- Clipboard -->
+  <rect x="14" y="13" width="28" height="36" rx="4" fill="#ffffff" stroke="#4f46e5" stroke-width="4"/>
+  <rect x="22" y="9" width="12" height="7" rx="2.5" fill="#4f46e5"/>
+  <!-- Checklist lines -->
+  <rect x="20" y="23" width="4" height="4" rx="1" fill="#4f46e5"/>
+  <rect x="27" y="23.5" width="10" height="3" rx="1.5" fill="#4f46e5"/>
+  <rect x="20" y="31" width="4" height="4" rx="1" fill="#4f46e5"/>
+  <rect x="27" y="31.5" width="9" height="3" rx="1.5" fill="#4f46e5"/>
+  <rect x="20" y="39" width="4" height="4" rx="1" fill="#4f46e5"/>
+  <rect x="27" y="39.5" width="7" height="3" rx="1.5" fill="#4f46e5"/>
+  <!-- Approval Shield -->
+  <path d="M44 29 L55 33.5 V42.5 C55 49.5 50 54.5 44 56.5 C38 54.5 33 49.5 33 42.5 V33.5 Z" fill="#10b981" stroke="#ffffff" stroke-width="2"/>
+  <path d="M39.5 42.5 L42.8 45.8 L49 39.2" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -736,7 +736,10 @@ $isSystemLocked = ($settings['license_lock_mode'] ?? '0') === '1';
                             class="w-full text-sm rounded-xl font-mono uppercase tracking-widest">
                     </div>
 
-                    <div class="flex justify-end pt-2">
+                    <div class="flex flex-wrap justify-between items-center gap-3 pt-2">
+                        <button type="button" onclick="openSettingsBuyModal()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md transition inline-flex items-center gap-1.5">
+                            <i class="fas fa-shopping-cart"></i> Comprar Licença
+                        </button>
                         <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-md transition">
                             <i class="fas fa-shield-check mr-1.5"></i> Validar & Ativar Licença
                         </button>
@@ -755,6 +758,25 @@ $isSystemLocked = ($settings['license_lock_mode'] ?? '0') === '1';
                     <i class="fas fa-cloud-download-alt text-indigo-600 text-lg"></i> Central de Atualizações do Sistema
                 </h2>
                 <p class="text-xs text-slate-400">Verifique se existem atualizações disponíveis comparando os arquivos locais com o pacote oficial criptografado.</p>
+            </div>
+
+            <!-- Informativo Obrigatório de Backup Frequente -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg shrink-0 mt-0.5">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="text-xs space-y-1">
+                        <div class="font-bold text-sm text-amber-900">Recomendação Importante: Realize Backups com Frequência!</div>
+                        <p class="text-amber-800 leading-relaxed">
+                            Antes de aplicar qualquer atualização e em sua rotina diária/semanal, faça um <strong>backup completo</strong> do banco de dados MySQL e das pastas <code>config/</code> (incluindo <code>vault/</code>) e <code>public/uploads/</code>.
+                        </p>
+                    </div>
+                </div>
+                <a href="https://github.com/chacalbl4ck/reqmaster/blob/main/BACKUP.md" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition shrink-0">
+                    <i class="fas fa-book-open"></i> Guia de Backup Completo
+                </a>
             </div>
 
             <div class="space-y-4 max-w-2xl">
@@ -959,6 +981,78 @@ $isSystemLocked = ($settings['license_lock_mode'] ?? '0') === '1';
             box.innerHTML = `<div class="font-bold">Erro durante a atualização.</div>`;
         });
     }
+
+    function openSettingsBuyModal() {
+        document.getElementById('settingsBuyModal').classList.remove('hidden');
+    }
+    function closeSettingsBuyModal() {
+        document.getElementById('settingsBuyModal').classList.add('hidden');
+    }
 </script>
+
+<!-- Modal Comprar Licença -->
+<div id="settingsBuyModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="max-w-lg w-full bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5">
+        <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Comprar Licença ReqMaster</h3>
+                    <p class="text-xs text-slate-500">CRM Soluções em Tecnologia &bull; Caio Monteiro &bull; 2027</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeSettingsBuyModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 space-y-1.5">
+            <div class="flex justify-between items-center">
+                <span class="font-bold uppercase text-emerald-800">Licença Anual Oficial</span>
+                <span class="text-base font-black text-emerald-700">R$ 400,00 / ano</span>
+            </div>
+            <p>Usuários e empresas ilimitadas &bull; Suporte de Seg a Sex, das 9h às 17h.</p>
+            <p class="text-rose-700 font-semibold">Software pago, não é de uso livre e é protegido por direitos autorais.</p>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                <div>
+                    <span class="text-[10px] font-semibold uppercase text-slate-400 block">E-mail para Suporte e Compra</span>
+                    <a href="mailto:caiormleo@outlook.com.br?subject=Compra%20de%20Licen%C3%A7a%20ReqMaster" class="font-bold text-indigo-700 hover:underline text-sm">
+                        caiormleo@outlook.com.br
+                    </a>
+                </div>
+                <a href="mailto:caiormleo@outlook.com.br?subject=Compra%20de%20Licen%C3%A7a%20ReqMaster" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold">
+                    Enviar E-mail
+                </a>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                <div>
+                    <span class="text-[10px] font-semibold uppercase text-slate-400 block">WhatsApp</span>
+                    <span class="font-bold text-emerald-700 text-sm">@caior.monteiro</span>
+                </div>
+                <span class="text-slate-500 font-semibold"><i class="fab fa-whatsapp text-emerald-600 mr-1"></i> @caior.monteiro</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                <div>
+                    <span class="text-[10px] font-semibold uppercase text-slate-400 block">GitHub</span>
+                    <a href="https://github.com/chacalbl4ck/reqmaster" target="_blank" rel="noopener noreferrer" class="font-bold text-slate-800 hover:underline">
+                        chacalbl4ck/reqmaster
+                    </a>
+                </div>
+                <span class="text-[10px] font-bold text-indigo-700 uppercase">DEUS SEJA LOUVADO</span>
+            </div>
+        </div>
+
+        <div class="flex justify-end pt-2 border-t border-slate-100">
+            <button type="button" onclick="closeSettingsBuyModal()" class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

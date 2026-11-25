@@ -85,6 +85,7 @@ use App\Controllers\LicenseController;
 use App\Controllers\CostCenterController;
 use App\Controllers\LogController;
 use App\Controllers\CatalogController;
+use App\Controllers\AboutController;
 
 // Cabeçalhos globais de segurança + verificação de bloqueio de indexação por bots
 $blockBots = false;
@@ -126,7 +127,7 @@ if ($updateService->isMaintenanceMode() && $route !== 'configuracoes/atualizacoe
 
 // Verificação Antifraude e Periódica (5 minutos) do Sistema de Licenciamento
 if (file_exists($dbConfigFile)) {
-    $allowedWhenLocked = ['licenciamento', 'licenciamento/ativar', 'login', 'logout', '2fa', 'install'];
+    $allowedWhenLocked = ['licenciamento', 'licenciamento/ativar', 'login', 'logout', '2fa', 'install', 'sobre'];
     if (!in_array($route, $allowedWhenLocked, true)) {
         try {
             $licenseService = new LicenseService($settingCheck ?? null);
@@ -256,6 +257,9 @@ try {
     // Logs do Sistema (Administrador)
     'logs' => (new LogController())->index(),
     'logs/exportar-csv' => (new LogController())->exportCsv(),
+
+    // Sobre o Sistema
+    'sobre' => (new AboutController())->index(),
 
     // 404
     default => (function() {

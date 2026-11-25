@@ -1,6 +1,25 @@
 # 📋 ReqMaster - Sistema de Requisições de Serviços & Compra de Materiais
 
-Sistema corporativo desenvolvido em **PHP 8.5** com banco de dados **MySQL**, projetado para gerenciar com total precisão o ciclo de vida de requisições de compras e contratação de serviços, cadastro de prestadores/fornecedores (**"para quem solicitar"**) e **gestão de contratos** com controle automático de saldo e vigência.
+Sistema corporativo desenvolvido em **PHP 8.5** com banco de dados **MySQL**, projetado para gerenciar com total precisão o ciclo de vida de requisições de compras e contratação de serviços, cadastro de prestadores/fornecedores (**"para quem solicitar"**), **gestão de contratos**, **catálogo de produtos/serviços com manutenção preventiva**, assinatura digital e auditoria completa.
+
+---
+
+## 💼 Licenciamento Comercial, Valores e Direitos Autorais
+
+> **⚠️ AVISO LEGAL:** Este software **é pago**, **NÃO é de uso livre** e é integralmente **protegido por direitos autorais**. É proibida a cópia, redistribuição ou utilização sem uma chave de licença oficial ativa.
+
+- **Valor da Licença Anual:** **R$ 400,00 / ano**
+- **Capacidade:** **Usuários e empresas ilimitadas**
+- **Suporte Técnico:** **Segunda a Sexta, das 9h às 17h**
+
+### 📞 Contato para Compra de Licença e Suporte
+- **Empresa:** **CRM Soluções em Tecnologia**
+- **Desenvolvedor:** **Caio Monteiro** (2027)
+- **E-mail:** `caiormleo@outlook.com.br`
+- **WhatsApp:** `@caior.monteiro`
+- **GitHub:** `chacalbl4ck/reqmaster`
+
+> **DEUS SEJA LOUVADO**
 
 ---
 
@@ -73,10 +92,9 @@ Sistema corporativo desenvolvido em **PHP 8.5** com banco de dados **MySQL**, pr
 │       └── ActivityLog.php            # Trilha de auditoria
 ├── config/
 │   ├── config.php                     # Constantes, helpers e formatadores
-│   └── database.php                   # Conexão PDO segura com MySQL
+│   └── Database.php                   # Conexão PDO segura com MySQL
 ├── install/
-│   ├── index.php                      # Assistente de Setup Automatizado do Banco
-│   └── installed.lock                 # Trava de segurança pós-instalação
+│   └── index.php                      # Assistente de Setup Automatizado do Banco
 ├── public/
 │   ├── assets/js/app.js               # Cálculos em tempo real e AJAX
 │   ├── .htaccess                      # Reescríta de URL no Apache
@@ -91,8 +109,17 @@ Sistema corporativo desenvolvido em **PHP 8.5** com banco de dados **MySQL**, pr
 │   └── layout/                        # Header, footer e modais
 ├── database.sql                       # Esquema relacional do banco (sem dados fictícios)
 ├── docker-compose.yml                 # Subida em 1 comando com Docker
+├── BACKUP.md                          # Guia completo de backup e restauração
 └── README.md                          # Este manual
 ```
+
+---
+
+## 💾 Backup & Restauração
+
+Para garantir a segurança dos dados, faça backups completos com frequência (banco de dados MySQL + pastas `config/` e `public/uploads/`), especialmente antes de atualizações. Consulte o passo a passo completo para Linux (Ubuntu Server) e Windows no documento oficial:
+
+👉 **[Guia Completo de Backup e Restauração (BACKUP.md)](BACKUP.md)**
 
 ---
 

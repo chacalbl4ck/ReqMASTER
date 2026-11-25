@@ -15,6 +15,7 @@ $companyName = $allSettings['company_name'] ?? 'ReqMaster';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?= bot_protection_meta($allSettings) ?>
+    <?= favicon_tags() ?>
     <title><?= APP_NAME ?></title>
     <!-- Tailwind CSS CDN com plugin forms -->
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -65,9 +66,7 @@ $companyName = $allSettings['company_name'] ?? 'ReqMaster';
                         ?>
                             <img src="<?= asset($companyLogo) ?>" alt="<?= htmlspecialchars($companyName) ?>" class="h-10 max-h-10 max-w-[180px] object-contain">
                         <?php else: ?>
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-primary-500/20">
-                                <i class="fas fa-file-invoice text-lg"></i>
-                            </div>
+                            <img src="<?= asset('img/reqmaster-logo.png') ?>" alt="ReqMaster" class="w-10 h-10 rounded-xl object-contain bg-white border border-slate-200 p-0.5 shadow-sm">
                             <span>Req<span class="text-slate-900">Master</span></span>
                         <?php endif; ?>
                     </a>
@@ -116,6 +115,10 @@ $companyName = $allSettings['company_name'] ?? 'ReqMaster';
                                 <span>Configurações</span>
                             </a>
                         <?php endif; ?>
+                        <a href="<?= url('sobre') ?>" class="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs whitespace-nowrap transition duration-150 <?= is_active('sobre') ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/25' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-100 font-medium' ?>">
+                            <i class="fas fa-circle-info text-xs <?= is_active('sobre') ? 'text-white' : 'text-slate-400' ?>"></i>
+                            <span>Sobre</span>
+                        </a>
                     </nav>
                 </div>
 
@@ -163,6 +166,7 @@ $companyName = $allSettings['company_name'] ?? 'ReqMaster';
                 <a href="<?= url('logs') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('logs') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Logs</a>
                 <a href="<?= url('configuracoes') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('configuracoes') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Configurações</a>
             <?php endif; ?>
+            <a href="<?= url('sobre') ?>" class="px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition <?= is_active('sobre') ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' ?>">Sobre</a>
         </div>
     </header>
 

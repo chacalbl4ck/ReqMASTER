@@ -193,6 +193,16 @@ function bot_protection_meta(array $settings): string
     return '';
 }
 
+function favicon_tags(): string
+{
+    $svg = htmlspecialchars(asset('img/favicon.svg'), ENT_QUOTES, 'UTF-8');
+    $png32 = htmlspecialchars(asset('img/favicon-32.png'), ENT_QUOTES, 'UTF-8');
+    $png64 = htmlspecialchars(asset('img/favicon-64.png'), ENT_QUOTES, 'UTF-8');
+    return '<link rel="icon" type="image/svg+xml" href="' . $svg . '">' . "\n    "
+         . '<link rel="icon" type="image/png" sizes="32x32" href="' . $png32 . '">' . "\n    "
+         . '<link rel="apple-touch-icon" sizes="64x64" href="' . $png64 . '">' . "\n";
+}
+
 function theme_css_vars(array $settings): string
 {
     $primary   = safe_hex_color($settings['theme_primary_color'] ?? '#4f46e5', '#4f46e5');
